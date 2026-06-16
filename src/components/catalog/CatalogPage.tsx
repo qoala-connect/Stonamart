@@ -15,7 +15,7 @@ import {
   AI_ALTERNATIVES_MOCK,
 } from "./data";
 import { EMPTY_FILTERS } from "./types";
-import type { FilterState, ViewMode, SortOption } from "./types";
+import type { CatalogProduct, FilterState, ViewMode, SortOption } from "./types";
 
 function toggleFilter(arr: string[], value: string): string[] {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
@@ -76,7 +76,7 @@ function AlternativeMaterialsSection({
   products,
   viewMode,
 }: {
-  products: (typeof CATALOG_PRODUCTS)[number][];
+  products: CatalogProduct[];
   viewMode: ViewMode;
 }) {
   return (
@@ -121,7 +121,11 @@ function AlternativeMaterialsSection({
 }
 
 // ─── Main Catalog Page ─────────────────────────────────────────────────────────
-export function CatalogPage() {
+export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[] }) {
+  const ALL_PRODUCTS = useMemo(
+    () => [...dbProducts, ...CATALOG_PRODUCTS],
+    [dbProducts]
+  );
   // ── State ──
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
@@ -163,7 +167,7 @@ export function CatalogPage() {
 
   // ── Computed: filtered products ──
   const filteredProducts = useMemo(() => {
-    return CATALOG_PRODUCTS.filter((p) => {
+    return ALL_PRODUCTS.filter((p) => {
       if (
         filters.materialType.length > 0 &&
         !filters.materialType.includes(p.materialType)
@@ -192,7 +196,7 @@ export function CatalogPage() {
         return false;
       return true;
     });
-  }, [filters]);
+  }, [filters, ALL_PRODUCTS]);
 
   // ── Computed: sorted products (with city boosting) ──
   const sortedProducts = useMemo(() => {
@@ -247,7 +251,7 @@ export function CatalogPage() {
 
   const alternativeProducts = useMemo(() => {
     if (!aiSearchActive) return [];
-    return CATALOG_PRODUCTS.filter((p) =>
+    return ALL_PRODUCTS.filter((p) =>
       AI_ALTERNATIVES_MOCK.includes(p.id)
     );
   }, [aiSearchActive]);
@@ -257,7 +261,12 @@ export function CatalogPage() {
   return (
     <>
       {/* Page header */}
-      <div className="bg-stone-950 py-12 md:py-16">
+      <div
+        className="py-12 md:py-16"
+        style={{
+          background: "linear-gradient(135deg, #1e2330 0%, #252d3d 40%, #1a2035 70%, #1e2330 100%)",
+        }}
+      >
         <Container>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -267,11 +276,11 @@ export function CatalogPage() {
             <p className="text-amber-gold font-sans text-xs font-medium uppercase tracking-[0.18em] mb-3">
               Full Collection
             </p>
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-stone-light leading-tight">
+            <h1 className="font-serif text-4xl md:text-5xl font-bold text-white leading-tight">
               Premium Stone Catalog
             </h1>
-            <p className="font-sans text-stone-light/50 text-base mt-3 max-w-xl">
-              Browse {CATALOG_PRODUCTS.length}+ verified stones from India&apos;s
+            <p className="font-sans text-gray-400 text-base mt-3 max-w-xl">
+              Browse {ALL_PRODUCTS.length}+ verified stones from India&apos;s
               finest suppliers — filtered for {cityCapitalized}.
             </p>
 
@@ -283,8 +292,8 @@ export function CatalogPage() {
                 whileTap={{ scale: 0.97 }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold border transition-all duration-200 ${
                   aiSearchActive
-                    ? "bg-amber-gold text-stone-950 border-amber-gold"
-                    : "bg-stone-light/8 border-stone-light/15 text-stone-light hover:bg-stone-light/15"
+                    ? "bg-amber-gold text-white border-amber-gold"
+                    : "bg-white/8 border-white/15 text-white/80 hover:bg-white/14 hover:border-white/25"
                 }`}
               >
                 <Camera size={14} />
@@ -295,7 +304,7 @@ export function CatalogPage() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   onClick={handleClearAISearch}
-                  className="text-xs font-sans text-stone-light/45 hover:text-stone-light transition-colors"
+                  className="text-xs font-sans text-white/45 hover:text-white transition-colors"
                 >
                   Clear AI results
                 </motion.button>
@@ -306,7 +315,7 @@ export function CatalogPage() {
       </div>
 
       {/* Main catalog area */}
-      <div className="bg-cream-50 min-h-screen">
+      <div className="bg-gray-50 min-h-screen">
         <Container>
           <div className="py-8 flex gap-7">
             {/* ── Sidebar ── */}

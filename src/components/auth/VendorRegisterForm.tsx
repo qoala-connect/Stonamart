@@ -311,12 +311,16 @@ export function VendorRegisterForm() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="font-serif text-[1.75rem] font-bold text-stone-950 leading-tight">
+        <p className="text-[10px] font-sans font-bold text-amber-gold/70 uppercase tracking-[0.22em] mb-2">
+          Vendor Partner Program
+        </p>
+        <h2 className="font-serif text-[1.85rem] font-bold text-stone-950 leading-tight tracking-tight">
           Register as a Vendor
         </h2>
-        <p className="mt-1.5 font-sans text-[13.5px] text-stone-dark/50">
+        <p className="mt-2 font-sans text-[13.5px] text-stone-dark/45 leading-relaxed">
           List your stone inventory on India&apos;s premium marketplace
         </p>
+        <div className="mt-5 h-px bg-gradient-to-r from-amber-gold/30 via-stone-dark/8 to-transparent" />
       </div>
 
       <StepDots current={step} />

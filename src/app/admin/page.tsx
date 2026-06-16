@@ -1,11 +1,10 @@
-import { AdminPortal } from "@/components/admin/AdminPortal";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Admin Portal — Stonamart",
-  description: "Stonamart internal admin console for CRM lead management and quotation generation.",
+  title: "Admin — Stonamart",
 };
 
 export default function AdminPage() {
-  return <AdminPortal />;
+  redirect("/admin/dashboard");
 }

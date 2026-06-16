@@ -4,15 +4,18 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, FileText, ShieldCheck, BarChart3, Settings,
-  Package, ChevronRight, Bell, Search, Layers,
+  Package, ChevronRight, Bell, Search, Layers, LogOut, Gem,
 } from "lucide-react";
+import { signOutAction } from "@/lib/auth-actions";
 import { LeadPipeline } from "./crm/LeadPipeline";
 import { LeadDetailCard } from "./crm/LeadDetailCard";
 import { QuotationGenerator } from "./quotation/QuotationGenerator";
+import { VendorApprovalSection } from "./VendorApprovalSection";
+import { ProductReviewSection } from "./ProductReviewSection";
 import { MOCK_LEADS } from "./data";
 import type { Lead, LeadStage } from "./types";
+import type { VendorApplication, PendingProduct } from "@/lib/admin-actions";
 
-// ─── Nav items ────────────────────────────────────────────────────────────────
 type NavId = "crm" | "quotations" | "products" | "vendors" | "analytics" | "settings";
 
 const NAV_ITEMS: {
@@ -20,36 +23,55 @@ const NAV_ITEMS: {
   label: string;
   icon: React.ElementType;
   disabled?: boolean;
-  badge?: number;
 }[] = [
-  { id: "crm",        label: "CRM Leads",     icon: Users     },
-  { id: "quotations", label: "Quotations",     icon: FileText  },
-  { id: "products",   label: "Product Review", icon: Package,    disabled: true },
-  { id: "vendors",    label: "Vendors",        icon: ShieldCheck,disabled: true },
-  { id: "analytics",  label: "Analytics",      icon: BarChart3,  disabled: true },
-  { id: "settings",   label: "Settings",       icon: Settings,   disabled: true },
+  { id: "crm",        label: "CRM Leads",     icon: Users      },
+  { id: "quotations", label: "Quotations",     icon: FileText   },
+  { id: "products",   label: "Product Review", icon: Package    },
+  { id: "vendors",    label: "Vendors",        icon: ShieldCheck },
+  { id: "analytics",  label: "Analytics",      icon: BarChart3, disabled: true },
+  { id: "settings",   label: "Settings",       icon: Settings,  disabled: true },
 ];
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
+// ─── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar({
   active,
   onNavigate,
   leadCount,
+  vendorCount,
+  productCount,
+  adminName,
 }: {
   active: NavId;
   onNavigate: (id: NavId) => void;
   leadCount: number;
+  vendorCount: number;
+  productCount: number;
+  adminName: string;
 }) {
+  const initials = adminName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <aside className="flex-shrink-0 w-56 bg-stone-950 border-r border-white/5 flex flex-col min-h-screen">
+    <aside className="flex-shrink-0 w-60 bg-white border-r border-gray-100 flex flex-col min-h-screen shadow-sm">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/5">
-        <p className="text-[9px] font-sans font-bold text-amber-gold/60 uppercase tracking-[0.25em] mb-0.5">
-          Admin Console
-        </p>
-        <h1 className="font-serif text-xl font-bold text-white tracking-tight">
-          Stonamart
-        </h1>
+      <div className="px-5 py-5 border-b border-gray-100">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-gold/12 border border-amber-gold/25 flex items-center justify-center">
+            <Gem size={14} className="text-amber-gold" />
+          </div>
+          <div>
+            <h1 className="font-serif text-[1.1rem] font-bold text-gray-900 tracking-tight leading-none">
+              Stonamart
+            </h1>
+            <p className="text-[9px] font-sans font-semibold text-gray-400 uppercase tracking-[0.18em] mt-0.5">
+              Admin Console
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Nav */}
@@ -57,24 +79,32 @@ function Sidebar({
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;
-          const badge = item.id === "crm" ? leadCount : item.badge;
+          const badge =
+            item.id === "crm"
+              ? leadCount
+              : item.id === "vendors"
+              ? vendorCount
+              : item.id === "products"
+              ? productCount
+              : undefined;
+
           return (
             <button
               key={item.id}
               onClick={() => !item.disabled && onNavigate(item.id)}
               disabled={item.disabled}
-              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 group ${
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${
                 item.disabled
                   ? "opacity-35 cursor-not-allowed"
                   : isActive
-                  ? "bg-white/8 text-white"
-                  : "text-white/45 hover:text-white/75 hover:bg-white/5"
+                  ? "bg-amber-gold/8 text-gray-900"
+                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
               }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="sidebarActive"
-                  className="absolute inset-0 rounded-lg bg-white/6"
+                  className="absolute inset-0 rounded-xl bg-amber-gold/8 border border-amber-gold/15"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
@@ -84,11 +114,11 @@ function Sidebar({
                   isActive ? "text-amber-gold" : ""
                 }`}
               />
-              <span className="relative z-10 text-[12.5px] font-sans font-medium flex-1">
+              <span className={`relative z-10 text-[13px] font-sans font-medium flex-1 ${isActive ? "text-gray-900" : ""}`}>
                 {item.label}
               </span>
               {badge && badge > 0 ? (
-                <span className="relative z-10 flex items-center justify-center h-4.5 min-w-[18px] px-1 bg-amber-gold text-stone-950 text-[9px] font-bold rounded-full">
+                <span className="relative z-10 flex items-center justify-center h-5 min-w-[20px] px-1.5 bg-amber-gold text-white text-[9px] font-bold rounded-full">
                   {badge}
                 </span>
               ) : item.disabled ? (
@@ -99,47 +129,68 @@ function Sidebar({
         })}
       </nav>
 
-      {/* Admin badge */}
-      <div className="px-4 py-4 border-t border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-amber-gold/20 flex items-center justify-center">
-            <span className="text-[11px] font-sans font-bold text-amber-gold">SA</span>
+      {/* Admin profile + sign out */}
+      <div className="px-4 py-4 border-t border-gray-100 space-y-3">
+        <div className="flex items-center gap-2.5 px-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-gold/30 to-amber-gold/10 border border-amber-gold/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-[11px] font-sans font-bold text-amber-gold">
+              {initials}
+            </span>
           </div>
-          <div>
-            <p className="text-[11px] font-sans font-semibold text-white/70">Sneha Agarwal</p>
-            <p className="text-[10px] font-sans text-white/30">Super Admin</p>
+          <div className="min-w-0">
+            <p className="text-[12px] font-sans font-semibold text-gray-800 truncate">
+              {adminName}
+            </p>
+            <p className="text-[10px] font-sans text-gray-400">Administrator</p>
           </div>
         </div>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all text-left"
+          >
+            <LogOut size={13} />
+            <span className="text-[12px] font-sans font-medium">Sign Out</span>
+          </button>
+        </form>
       </div>
     </aside>
   );
 }
 
-// ─── Top bar ──────────────────────────────────────────────────────────────────
+// ─── Top bar ───────────────────────────────────────────────────────────────────
 function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="flex-shrink-0 flex items-center justify-between px-7 py-4 border-b border-stone-dark/8 bg-white">
+    <div className="flex-shrink-0 flex items-center justify-between px-7 py-4 border-b border-gray-100 bg-white">
       <div>
-        <h2 className="font-serif text-xl font-bold text-stone-950 leading-tight">{title}</h2>
+        <h2 className="font-serif text-xl font-bold text-gray-900 leading-tight">
+          {title}
+        </h2>
         {subtitle && (
-          <p className="font-sans text-[12px] text-stone-dark/40 mt-0.5">{subtitle}</p>
+          <p className="font-sans text-[12px] text-gray-400 mt-0.5">{subtitle}</p>
         )}
       </div>
-      <div className="flex items-center gap-3">
-        <button className="p-2 rounded-lg hover:bg-stone-dark/5 text-stone-dark/35 hover:text-stone-950 transition-colors">
+      <div className="flex items-center gap-2">
+        <button className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-gray-700 transition-colors">
           <Search size={16} />
         </button>
-        <button className="relative p-2 rounded-lg hover:bg-stone-dark/5 text-stone-dark/35 hover:text-stone-950 transition-colors">
+        <button className="relative p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-gray-700 transition-colors">
           <Bell size={16} />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-gold" />
+          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-gold" />
         </button>
       </div>
     </div>
   );
 }
 
-// ─── CRM Section ──────────────────────────────────────────────────────────────
-function CRMSection({ leads, onLeadsChange }: { leads: Lead[]; onLeadsChange: (l: Lead[]) => void }) {
+// ─── CRM section ───────────────────────────────────────────────────────────────
+function CRMSection({
+  leads,
+  onLeadsChange,
+}: {
+  leads: Lead[];
+  onLeadsChange: (l: Lead[]) => void;
+}) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const handleStageChange = useCallback(
@@ -158,30 +209,43 @@ function CRMSection({ leads, onLeadsChange }: { leads: Lead[]; onLeadsChange: (l
         )
       );
       setSelectedLead((prev) =>
-        prev?.id === id ? { ...prev, followUpDate: date, followUpNote: note } : prev
+        prev?.id === id
+          ? { ...prev, followUpDate: date, followUpNote: note }
+          : prev
       );
     },
     [leads, onLeadsChange]
   );
 
-  // Summary bar
-  const stageGroups: Record<string, number> = {};
-  leads.forEach((l) => { stageGroups[l.stage] = (stageGroups[l.stage] ?? 0) + 1; });
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Summary pills */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-7 py-3 border-b border-stone-dark/6 bg-cream-50 overflow-x-auto">
-        <div className="flex items-center gap-1.5 text-[11px] font-sans text-stone-dark/40 mr-2">
+      <div className="flex-shrink-0 flex items-center gap-2 px-7 py-3 border-b border-gray-100 bg-gray-50/60 overflow-x-auto">
+        <div className="flex items-center gap-1.5 text-[11px] font-sans text-gray-400 mr-2">
           <Layers size={12} />
           <span>{leads.length} leads</span>
         </div>
         {[
-          { label: "Active", count: leads.filter(l => !["DELIVERED","CLOSED"].includes(l.stage)).length, color: "bg-blue-500/10 text-blue-700" },
-          { label: "Urgent", count: leads.filter(l => l.priority === "urgent").length, color: "bg-red-500/10 text-red-700" },
-          { label: "Confirmed", count: leads.filter(l => l.stage === "CONFIRMED" || l.stage === "PROCUREMENT").length, color: "bg-emerald-500/10 text-emerald-700" },
+          {
+            label: "Active",
+            count: leads.filter((l) => !["DELIVERED", "CLOSED"].includes(l.stage)).length,
+            color: "bg-blue-50 text-blue-600 border border-blue-100",
+          },
+          {
+            label: "Urgent",
+            count: leads.filter((l) => l.priority === "urgent").length,
+            color: "bg-red-50 text-red-600 border border-red-100",
+          },
+          {
+            label: "Confirmed",
+            count: leads.filter((l) => l.stage === "CONFIRMED" || l.stage === "PROCUREMENT").length,
+            color: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+          },
         ].map((pill) => (
-          <span key={pill.label} className={`flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-sans font-semibold ${pill.color}`}>
+          <span
+            key={pill.label}
+            className={`flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-sans font-semibold ${pill.color}`}
+          >
             {pill.count} {pill.label}
           </span>
         ))}
@@ -192,7 +256,6 @@ function CRMSection({ leads, onLeadsChange }: { leads: Lead[]; onLeadsChange: (l
         <LeadPipeline leads={leads} onSelectLead={setSelectedLead} />
       </div>
 
-      {/* Detail slide-in */}
       <LeadDetailCard
         lead={selectedLead}
         onClose={() => setSelectedLead(null)}
@@ -203,27 +266,26 @@ function CRMSection({ leads, onLeadsChange }: { leads: Lead[]; onLeadsChange: (l
   );
 }
 
-// ─── Quotations section ───────────────────────────────────────────────────────
-function QuotationsSection() {
-  return (
-    <div className="flex-1 overflow-y-auto px-7 py-6">
-      <QuotationGenerator />
-    </div>
-  );
-}
-
-// ─── Coming soon placeholder ──────────────────────────────────────────────────
+// ─── Coming soon placeholder ───────────────────────────────────────────────────
 function ComingSoon({ label }: { label: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-stone-dark/20">
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-300">
       <Layers size={40} strokeWidth={1} />
-      <p className="font-sans text-sm">{label} — coming soon</p>
+      <p className="font-sans text-sm text-gray-400">{label} — coming soon</p>
     </div>
   );
 }
 
-// ─── Admin Portal ─────────────────────────────────────────────────────────────
-export function AdminPortal() {
+// ─── Admin Portal ──────────────────────────────────────────────────────────────
+export function AdminPortal({
+  pendingVendors,
+  pendingProducts,
+  adminName,
+}: {
+  pendingVendors: VendorApplication[];
+  pendingProducts: PendingProduct[];
+  adminName: string;
+}) {
   const [active, setActive] = useState<NavId>("crm");
   const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
 
@@ -232,22 +294,27 @@ export function AdminPortal() {
   ).length;
 
   const PAGE_META: Record<NavId, { title: string; subtitle?: string }> = {
-    crm:        { title: "CRM Lead Pipeline", subtitle: "Track and manage every customer inquiry across all stages" },
-    quotations: { title: "Quotation Generator", subtitle: "Build, price, and dispatch professional quotations" },
-    products:   { title: "Product Review", subtitle: "Approve or request changes to vendor listings" },
-    vendors:    { title: "Vendor Management", subtitle: "Manage verified stone suppliers and their profiles" },
-    analytics:  { title: "Analytics", subtitle: "Sales performance, pipeline velocity, and trends" },
-    settings:   { title: "Settings", subtitle: "Configure platform preferences and team access" },
+    crm:       { title: "CRM Lead Pipeline",    subtitle: "Track and manage every customer inquiry across all stages" },
+    quotations:{ title: "Quotation Generator",  subtitle: "Build, price, and dispatch professional quotations" },
+    products:  { title: "Product Review",       subtitle: "Approve or request changes to vendor listings" },
+    vendors:   { title: "Vendor Management",    subtitle: "Review applications and manage verified stone suppliers" },
+    analytics: { title: "Analytics",            subtitle: "Sales performance, pipeline velocity, and trends" },
+    settings:  { title: "Settings",             subtitle: "Configure platform preferences and team access" },
   };
 
   const meta = PAGE_META[active];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-cream-50 font-sans">
-      {/* Sidebar */}
-      <Sidebar active={active} onNavigate={setActive} leadCount={urgentCount} />
+    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+      <Sidebar
+        active={active}
+        onNavigate={setActive}
+        leadCount={urgentCount}
+        vendorCount={pendingVendors.length}
+        productCount={pendingProducts.length}
+        adminName={adminName}
+      />
 
-      {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar title={meta.title} subtitle={meta.subtitle} />
 
@@ -263,11 +330,19 @@ export function AdminPortal() {
             {active === "crm" && (
               <CRMSection leads={leads} onLeadsChange={setLeads} />
             )}
-            {active === "quotations" && <QuotationsSection />}
-            {active === "products"   && <ComingSoon label="Product Review" />}
-            {active === "vendors"    && <ComingSoon label="Vendor Management" />}
-            {active === "analytics"  && <ComingSoon label="Analytics" />}
-            {active === "settings"   && <ComingSoon label="Settings" />}
+            {active === "quotations" && (
+              <div className="flex-1 overflow-y-auto px-7 py-6">
+                <QuotationGenerator />
+              </div>
+            )}
+            {active === "vendors" && (
+              <VendorApprovalSection initialVendors={pendingVendors} />
+            )}
+            {active === "products" && (
+              <ProductReviewSection initialProducts={pendingProducts} />
+            )}
+            {active === "analytics" && <ComingSoon label="Analytics" />}
+            {active === "settings"  && <ComingSoon label="Settings" />}
           </motion.div>
         </AnimatePresence>
       </div>

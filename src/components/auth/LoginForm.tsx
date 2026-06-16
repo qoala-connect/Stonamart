@@ -27,12 +27,16 @@ export function LoginForm() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-serif text-[1.75rem] font-bold text-stone-950 leading-tight">
+        <p className="text-[10px] font-sans font-bold text-amber-gold/70 uppercase tracking-[0.22em] mb-2">
+          Stonamart Portal
+        </p>
+        <h2 className="font-serif text-[1.85rem] font-bold text-stone-950 leading-tight tracking-tight">
           Welcome back
         </h2>
-        <p className="mt-1.5 font-sans text-[13.5px] text-stone-dark/50">
+        <p className="mt-2 font-sans text-[13.5px] text-stone-dark/45 leading-relaxed">
           Sign in to your Stonamart account
         </p>
+        <div className="mt-5 h-px bg-gradient-to-r from-amber-gold/30 via-stone-dark/8 to-transparent" />
       </div>
 
       {/* Global error */}
@@ -97,23 +101,30 @@ export function LoginForm() {
         <SubmitRow />
       </form>
 
-      <AuthDivider label="Don't have an account?" />
+      <AuthDivider label="New to Stonamart?" />
 
-      {/* Signup links */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Signup links — all three roles */}
+      <div className="grid grid-cols-3 gap-2.5">
         <Link
           href="/signup"
-          className="flex items-center justify-center gap-2 px-4 py-3 border border-stone-dark/12 rounded-xl text-[13px] font-sans font-semibold text-stone-dark/70 hover:border-stone-dark/25 hover:text-stone-950 transition-all group"
+          className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white border border-stone-dark/10 rounded-xl text-[12px] font-sans font-semibold text-stone-dark/60 hover:border-amber-gold/35 hover:text-stone-950 hover:bg-amber-gold/4 transition-all duration-200"
         >
+          <span className="text-base">🛒</span>
           Customer
-          <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
         </Link>
         <Link
           href="/vendor/register"
-          className="flex items-center justify-center gap-2 px-4 py-3 border border-amber-gold/30 rounded-xl text-[13px] font-sans font-semibold text-amber-700 hover:bg-amber-gold/6 hover:border-amber-gold/50 transition-all group"
+          className="flex flex-col items-center gap-1.5 px-3 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[12px] font-sans font-semibold text-emerald-700 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all duration-200"
         >
+          <span className="text-base">🏪</span>
           Vendor
-          <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+        <Link
+          href="/signup?role=admin"
+          className="flex flex-col items-center gap-1.5 px-3 py-3 bg-blue-500/5 border border-blue-500/18 rounded-xl text-[12px] font-sans font-semibold text-blue-600 hover:bg-blue-500/10 hover:border-blue-500/35 transition-all duration-200"
+        >
+          <span className="text-base">⚙️</span>
+          Admin
         </Link>
       </div>
     </div>

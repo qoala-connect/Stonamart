@@ -18,6 +18,13 @@ export default async function AccountPage() {
 
   const { user } = session;
 
+  // Role-based redirect — admin and vendor have dedicated dashboards
+  if (user.role === "ADMIN")  redirect("/admin/dashboard");
+  if (user.role === "VENDOR") {
+    if (user.status === "PENDING") redirect("/vendor/pending");
+    redirect("/vendor/dashboard");
+  }
+
   return (
     <MainLayout>
       <div className="min-h-[60vh] bg-cream-50 py-16">

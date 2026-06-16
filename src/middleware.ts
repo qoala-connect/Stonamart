@@ -21,8 +21,10 @@ const AUTH_REQUIRED_PREFIXES = [
   "/account",
 ];
 
-// Routes that authenticated users should not see again
-const AUTH_REDIRECT_PATHS = ["/login", "/signup"];
+// Routes that authenticated users should not see again.
+// /login is intentionally NOT here — an admin or vendor needs to be able
+// to visit /login to switch to a different account without signing out first.
+const AUTH_REDIRECT_PATHS = ["/signup"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { motion } from "framer-motion";
 import { MapPin, ArrowUpRight, CheckCircle2, AlertCircle } from "lucide-react";
-import { Container } from "@/components/ui";
+import { Container, MarbleOverlay } from "@/components/ui";
 import Link from "next/link";
 
 interface FeaturedProduct {
@@ -147,6 +147,25 @@ const cardVariants = {
   },
 };
 
+// Section-level marble vein overlay SVG
+function SectionMarbleVeins() {
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      viewBox="0 0 1400 800"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+      style={{ opacity: 1 }}
+    >
+      <path d="M-100 120 C100 80, 300 160, 520 100 C740 40, 900 130, 1100 80 C1280 34, 1420 100, 1600 70" stroke="rgba(255,255,255,0.07)" strokeWidth="1.8" fill="none" />
+      <path d="M0 280 C180 240, 380 310, 600 270 C820 230, 980 295, 1200 255 C1380 218, 1500 268, 1700 240" stroke="rgba(201,169,97,0.18)" strokeWidth="1.5" fill="none" />
+      <path d="M200 450 C380 415, 560 470, 760 435 C960 400, 1120 455, 1340 418 C1500 384, 1620 430, 1800 400" stroke="rgba(255,255,255,0.05)" strokeWidth="1.1" fill="none" />
+      <path d="M-50 620 C150 585, 340 640, 560 605 C780 570, 940 625, 1160 588 C1340 554, 1460 600, 1640 570" stroke="rgba(201,169,97,0.12)" strokeWidth="1.2" fill="none" />
+      <path d="M100 760 C290 725, 480 775, 700 740 C920 705, 1080 758, 1300 722 C1480 688, 1600 735, 1780 705" stroke="rgba(255,255,255,0.04)" strokeWidth="0.8" fill="none" />
+    </svg>
+  );
+}
+
 interface FeaturedCardProps {
   product: FeaturedProduct;
 }
@@ -158,7 +177,10 @@ function FeaturedCard({ product }: FeaturedCardProps) {
     <motion.div variants={cardVariants}>
       <motion.div
         className="relative rounded-2xl overflow-hidden group flex flex-col"
-        style={{ minHeight: 340 }}
+        style={{
+          minHeight: 380,
+          boxShadow: "0 0 0 1px rgba(255,255,255,0.06)",
+        }}
         whileHover="hover"
         initial="rest"
       >
@@ -177,7 +199,7 @@ function FeaturedCard({ product }: FeaturedCardProps) {
 
         {/* SVG noise for stone depth */}
         <div
-          className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none"
+          className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
           style={{
             backgroundImage:
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E\")",
@@ -185,30 +207,44 @@ function FeaturedCard({ product }: FeaturedCardProps) {
           }}
         />
 
-        {/* Gradient scrim — bottom for readability */}
+        {/* Gradient scrim — richer at bottom for readability */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: isLight
-              ? "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)"
-              : "linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 55%, transparent 100%)",
+              ? "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.12) 55%, transparent 100%)"
+              : "linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.06) 55%, transparent 100%)",
           }}
         />
 
         {/* Top badges row */}
         <div className="relative z-10 flex items-center justify-between p-5">
-          {/* Category */}
-          <span
-            className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
-            style={{
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: isLight ? "rgba(255,255,255,0.85)" : "rgba(10,10,10,0.65)",
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            {product.categoryLabel}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Category */}
+            <span
+              className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                color: isLight ? "rgba(255,255,255,0.85)" : "rgba(10,10,10,0.65)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              {product.categoryLabel}
+            </span>
+            {/* Finish pill badge */}
+            <span
+              className="text-[10px] font-sans font-medium uppercase tracking-[0.12em] px-2.5 py-1 rounded-full"
+              style={{
+                background: "rgba(201,169,97,0.15)",
+                border: "1px solid rgba(201,169,97,0.30)",
+                color: "#c9a961",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              {product.finish}
+            </span>
+          </div>
 
           {/* Stock status */}
           {product.status === "in-stock" ? (
@@ -224,7 +260,7 @@ function FeaturedCard({ product }: FeaturedCardProps) {
           )}
         </div>
 
-        {/* Spacer — pushes content down */}
+        {/* Spacer */}
         <div className="flex-1 min-h-16" />
 
         {/* Bottom content */}
@@ -287,7 +323,7 @@ function FeaturedCard({ product }: FeaturedCardProps) {
 
             <Link href={`/products/${product.id}`}>
               <motion.div
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all duration-200"
                 style={{
                   background: "rgba(201,169,97,0.15)",
                   border: "1px solid rgba(201,169,97,0.35)",
@@ -295,7 +331,8 @@ function FeaturedCard({ product }: FeaturedCardProps) {
                   backdropFilter: "blur(6px)",
                 }}
                 whileHover={{
-                  background: "rgba(201,169,97,0.25)",
+                  background: "#c9a961",
+                  color: "#0a0a0a",
                   scale: 1.04,
                 }}
                 whileTap={{ scale: 0.97 }}
@@ -313,8 +350,23 @@ function FeaturedCard({ product }: FeaturedCardProps) {
 
 export function FeaturedProductsSection() {
   return (
-    <section id="featured" className="py-20 md:py-28 bg-cream-50">
-      <Container>
+    <section
+      id="featured"
+      className="py-20 md:py-28 relative overflow-hidden border-t border-amber-gold/15"
+      style={{
+        background: [
+          "radial-gradient(ellipse at 18% 18%, rgba(201,169,97,0.13) 0%, transparent 46%)",
+          "radial-gradient(ellipse at 82% 78%, rgba(100,118,175,0.10) 0%, transparent 44%)",
+          "radial-gradient(ellipse at 55% 50%, rgba(80,100,155,0.07) 0%, transparent 38%)",
+          "linear-gradient(148deg, #151b2e 0%, #1c2240 38%, #111828 68%, #161c30 100%)",
+        ].join(", "),
+      }}
+    >
+      <MarbleOverlay variant="grey" intensity={0.5} />
+      {/* Section-level marble vein overlay */}
+      <SectionMarbleVeins />
+
+      <Container className="relative z-10">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -327,12 +379,12 @@ export function FeaturedProductsSection() {
             <p className="text-amber-gold font-sans text-xs font-medium uppercase tracking-[0.18em] mb-3">
               Curated by Experts
             </p>
-            <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-950 leading-tight">
+            <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-light leading-tight">
               Featured Premium<br className="hidden md:block" /> Products
             </h2>
           </div>
           <div className="max-w-xs">
-            <p className="font-sans text-stone-dark/55 text-base leading-relaxed">
+            <p className="font-sans text-stone-light/50 text-base leading-relaxed">
               Hand-selected from the world&apos;s finest quarries. Each piece verified for quality.
             </p>
             <Link

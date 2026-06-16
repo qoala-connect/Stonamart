@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Plus, BadgeCheck, MapPin } from "lucide-react";
+import { LayoutDashboard, Plus, BadgeCheck, MapPin, LogOut } from "lucide-react";
 import { Container } from "@/components/ui";
+import { signOutAction } from "@/lib/auth-actions";
 import { KPICards } from "./KPICards";
 import { ListingsTable } from "./ListingsTable";
 import { ProductSubmissionForm } from "./ProductSubmissionForm";
-import { INITIAL_LISTINGS, BG_FOR_MATERIAL } from "./data";
+import { BG_FOR_MATERIAL } from "./data";
+import { submitProduct, uploadProductImages } from "@/lib/vendor-actions";
 import type {
   VendorListing,
   ListingStatus,
@@ -15,10 +17,11 @@ import type {
   FormStep2,
   FormStep3,
 } from "./types";
+import type { VendorProfileData } from "@/lib/vendor-actions";
 
 type Tab = "overview" | "submit";
 
-// ─── Tab bar ──────────────────────────────────────────────────────────────────
+// ─── Tab bar ───────────────────────────────────────────────────────────────────
 function TabBar({
   active,
   onChange,
@@ -34,7 +37,7 @@ function TabBar({
   ];
 
   return (
-    <div className="flex items-center gap-1 border-b border-stone-dark/8 mb-8">
+    <div className="flex items-center gap-1 border-b border-gray-200 mb-8">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = active === tab.id;
@@ -46,9 +49,9 @@ function TabBar({
           >
             <Icon
               size={14}
-              className={isActive ? "text-amber-gold" : "text-stone-dark/35"}
+              className={isActive ? "text-amber-gold" : "text-gray-400"}
             />
-            <span className={isActive ? "text-stone-950" : "text-stone-dark/45"}>
+            <span className={isActive ? "text-gray-900" : "text-gray-400"}>
               {tab.label}
             </span>
             {tab.id === "overview" && pendingCount > 0 && (
@@ -56,7 +59,6 @@ function TabBar({
                 {pendingCount}
               </span>
             )}
-            {/* Active underline */}
             {isActive && (
               <motion.div
                 layoutId="tabUnderline"
@@ -71,16 +73,27 @@ function TabBar({
   );
 }
 
-// ─── Main Vendor Portal ───────────────────────────────────────────────────────
-export function VendorPortal() {
-  const [listings, setListings] = useState<VendorListing[]>(INITIAL_LISTINGS);
+// ─── Main vendor portal ────────────────────────────────────────────────────────
+export function VendorPortal({
+  vendorProfile,
+  initialListings = [],
+}: {
+  vendorProfile: VendorProfileData | null;
+  initialListings?: VendorListing[];
+}) {
+  const [listings, setListings] = useState<VendorListing[]>(initialListings);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [editData, setEditData] = useState<{
     step1: FormStep1;
     step2: FormStep2;
   } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
-  // ── OOS toggle (optimistic) ──
+  const companyName = vendorProfile?.companyName ?? "My Store";
+  const city = vendorProfile?.city ?? "";
+
+  // ── OOS toggle ──
   const handleToggleOOS = useCallback((id: string) => {
     setListings((prev) =>
       prev.map((l) =>
@@ -89,7 +102,7 @@ export function VendorPortal() {
     );
   }, []);
 
-  // ── Open edit form for a CHANGES_REQUESTED listing ──
+  // ── Open edit for a CHANGES_REQUESTED listing ──
   const handleEditListing = useCallback(
     (id: string) => {
       const listing = listings.find((l) => l.id === id);
@@ -116,7 +129,7 @@ export function VendorPortal() {
     [listings]
   );
 
-  // ── Handle form submission ──
+  // ── Submit / save to DB ──
   const handleFormSubmit = useCallback(
     (
       action: "draft" | "review",
@@ -124,9 +137,12 @@ export function VendorPortal() {
     ) => {
       const { step1, step2 } = data;
       const mat = BG_FOR_MATERIAL[step1.materialType] ?? BG_FOR_MATERIAL.other;
+      setSubmitError(null);
 
+      // Optimistically add to the list
+      const tempId = `tmp-${Date.now()}`;
       const newListing: VendorListing = {
-        id: `v${Date.now()}`,
+        id: tempId,
         name: step1.name,
         materialType: step1.materialType,
         category: step1.category,
@@ -148,9 +164,49 @@ export function VendorPortal() {
 
       setListings((prev) => [newListing, ...prev]);
       setEditData(null);
-
-      // After success animation, return to overview
       setTimeout(() => setActiveTab("overview"), 2500);
+
+      // Upload images then persist to DB in background
+      startTransition(async () => {
+        // Upload any images first, then save product with their URLs
+        let imageUrls: string[] = [];
+        const imageFiles = data.step3.files.slice(0, 6).filter(Boolean) as File[];
+        if (imageFiles.length > 0) {
+          try {
+            const fd = new FormData();
+            imageFiles.forEach((f) => fd.append("files", f));
+            const { urls } = await uploadProductImages(fd);
+            imageUrls = urls;
+          } catch {
+            // Upload failed — product saves without images
+          }
+        }
+
+        const result = await submitProduct({
+          name: step1.name,
+          materialType: step1.materialType,
+          category: step1.category,
+          color: step2.color,
+          finish: step2.finish,
+          thickness: step2.thickness,
+          dimensions: step2.dimensions,
+          warehouseCity: step2.warehouseCity,
+          pricePerUnit: parseFloat(step1.pricePerUnit) || 0,
+          unit: step1.unit,
+          stockQty: parseInt(step1.stockQty) || 0,
+          status: action === "draft" ? "DRAFT" : "PENDING_APPROVAL",
+          imageUrls,
+        });
+
+        if (result.ok && result.id) {
+          // Replace temp id with real DB id
+          setListings((prev) =>
+            prev.map((l) => (l.id === tempId ? { ...l, id: result.id! } : l))
+          );
+        } else if (!result.ok) {
+          setSubmitError(result.error ?? "Failed to save listing.");
+        }
+      });
     },
     []
   );
@@ -161,56 +217,88 @@ export function VendorPortal() {
 
   return (
     <>
-      {/* ── Header ── */}
-      <div className="bg-stone-950 py-8 border-b border-white/5">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 py-6 shadow-sm">
         <Container>
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-start justify-between gap-4 flex-wrap"
+            transition={{ duration: 0.4 }}
+            className="flex items-center justify-between gap-4 flex-wrap"
           >
-            <div>
-              <p className="text-amber-gold font-sans text-[11px] font-semibold uppercase tracking-[0.18em] mb-2">
-                Vendor Portal
-              </p>
-              <h1 className="font-serif text-3xl font-bold text-stone-light leading-tight">
-                Rajesh Stone Co.
-              </h1>
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-stone-light/45 text-xs font-sans">
-                  <MapPin size={11} className="text-amber-gold/70" />
-                  Mumbai, India
+            <div className="flex items-center gap-4">
+              {/* Avatar */}
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-gold/20 to-amber-gold/8 border border-amber-gold/20 flex items-center justify-center flex-shrink-0">
+                <span className="font-serif text-lg font-bold text-amber-gold leading-none">
+                  {companyName[0]?.toUpperCase() ?? "V"}
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="font-sans text-[10px] font-semibold text-gray-400 uppercase tracking-[0.16em]">
+                    Vendor Portal
+                  </p>
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-full">
+                    <BadgeCheck size={9} className="text-emerald-500" />
+                    <span className="text-[9px] font-sans font-semibold text-emerald-600">
+                      Verified
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/12 border border-emerald-500/20 rounded-full">
-                  <BadgeCheck size={11} className="text-emerald-400" />
-                  <span className="text-[10px] font-sans font-semibold text-emerald-400">
-                    Verified Vendor
-                  </span>
-                </div>
+                <h1 className="font-serif text-2xl font-bold text-gray-900 leading-tight">
+                  {companyName}
+                </h1>
+                {city && (
+                  <div className="flex items-center gap-1.5 mt-0.5 text-gray-400 text-xs font-sans">
+                    <MapPin size={10} className="text-amber-gold" />
+                    {city}, India
+                  </div>
+                )}
               </div>
             </div>
 
-            <motion.button
-              onClick={() => {
-                setEditData(null);
-                setActiveTab("submit");
-              }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-amber-gold text-stone-950 font-sans font-semibold text-sm rounded-xl hover:bg-amber-gold/85 transition-colors shadow-[0_2px_12px_rgba(201,169,97,0.28)] self-start mt-1"
-            >
-              <Plus size={15} />
-              Add New Listing
-            </motion.button>
+            <div className="flex items-center gap-2.5">
+              <motion.button
+                onClick={() => {
+                  setEditData(null);
+                  setActiveTab("submit");
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-amber-gold text-white font-sans font-semibold text-sm rounded-xl hover:bg-amber-gold/90 transition-colors shadow-sm"
+              >
+                <Plus size={15} />
+                Add New Listing
+              </motion.button>
+
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50 rounded-xl text-xs font-sans font-semibold transition-all"
+                >
+                  <LogOut size={13} />
+                  Sign Out
+                </button>
+              </form>
+            </div>
           </motion.div>
         </Container>
       </div>
 
-      {/* ── Page body ── */}
-      <div className="bg-cream-50 min-h-screen">
+      {/* Page body */}
+      <div className="bg-gray-50 min-h-screen">
         <Container>
           <div className="py-8">
+            {submitError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3.5 bg-red-50 border border-red-200/60 rounded-xl"
+              >
+                <p className="font-sans text-sm text-red-600">{submitError}</p>
+              </motion.div>
+            )}
+
             <TabBar
               active={activeTab}
               onChange={(t) => {
@@ -230,13 +318,8 @@ export function VendorPortal() {
                   transition={{ duration: 0.25 }}
                   className="space-y-8"
                 >
-                  {/* KPI cards */}
                   <KPICards listings={listings} />
-
-                  {/* Divider */}
                   <div className="border-t border-stone-dark/7" />
-
-                  {/* Listings table */}
                   <ListingsTable
                     listings={listings}
                     onToggleOOS={handleToggleOOS}

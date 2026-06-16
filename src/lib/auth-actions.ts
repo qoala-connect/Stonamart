@@ -67,37 +67,36 @@ export async function loginAction(
     return { error: "Email and password are required." };
   }
 
-  let userRole = "CUSTOMER";
-  let userStatus = "ACTIVE";
+  // Sign out any existing session first — avoids cookie conflicts when
+  // switching accounts (e.g. admin logging in as vendor).
+  try {
+    await auth.api.signOut({ headers: await headers() });
+  } catch {
+    // Not currently signed in — that's fine, continue.
+  }
 
   try {
-    const result = await auth.api.signInEmail({
+    await auth.api.signInEmail({
       body: { email, password },
       headers: await headers(),
     });
-
-    // Better Auth returns the user object; additional fields are included
-    const user = (result as { user?: { role?: string; status?: string } })?.user;
-    if (!user) {
-      return { error: "Invalid email or password." };
-    }
-
-    userRole = user.role ?? "CUSTOMER";
-    userStatus = user.status ?? "ACTIVE";
   } catch (err: unknown) {
-    console.error("[loginAction] signInEmail failed:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[loginAction] signInEmail failed:", msg);
     return { error: "Invalid email or password. Please try again." };
   }
 
-  // Suspended / inactive account
-  if (userStatus === "INACTIVE") {
-    redirect("/suspended");
-  }
+  // Query DB directly for role/status — signInEmail return value may omit
+  // custom fields when using the nextCookies() plugin.
+  const { rows } = await db.query(
+    `SELECT role, status FROM "user" WHERE email = $1 LIMIT 1`,
+    [email]
+  );
+  const userRole   = (rows[0]?.role   as string) ?? "CUSTOMER";
+  const userStatus = (rows[0]?.status as string) ?? "ACTIVE";
 
-  // Role-based redirect
-  if (userRole === "ADMIN") {
-    redirect("/admin/dashboard");
-  }
+  if (userStatus === "INACTIVE") redirect("/suspended");
+  if (userRole === "ADMIN")  redirect("/admin/dashboard");
   if (userRole === "VENDOR") {
     if (userStatus === "PENDING") redirect("/vendor/pending");
     redirect("/vendor/dashboard");
@@ -114,6 +113,7 @@ export async function customerSignupAction(
   const email = (formData.get("email") as string)?.trim();
   const password = formData.get("password") as string;
   const city = (formData.get("city") as string)?.trim();
+  const phone = (formData.get("phone") as string)?.trim();
 
   const errors: Record<string, string> = {};
   if (!name) errors.name = "Full name is required.";
@@ -122,8 +122,10 @@ export async function customerSignupAction(
     errors.password = "Password must be at least 8 characters.";
   if (Object.keys(errors).length > 0) return { fieldErrors: errors };
 
+  let userId = "";
+
   try {
-    await auth.api.signUpEmail({
+    const result = await auth.api.signUpEmail({
       body: {
         name,
         email,
@@ -133,6 +135,8 @@ export async function customerSignupAction(
       },
       headers: await headers(),
     });
+    const user = (result as { user?: { id?: string } })?.user;
+    userId = user?.id ?? "";
   } catch (err: unknown) {
     console.error("[customerSignupAction] signUpEmail failed:", err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -142,9 +146,22 @@ export async function customerSignupAction(
     return { error: "Could not create your account. Please try again." };
   }
 
-  // Link past guest inquiries to this new account (Supabase operation)
+  // Save customer profile (phone, city)
+  if (userId) {
+    try {
+      await db.query(
+        `INSERT INTO customer_profiles ("userId", phone, "preferredCity")
+         VALUES ($1, $2, $3)
+         ON CONFLICT ("userId") DO NOTHING`,
+        [userId, phone || null, city || null]
+      );
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  // Link past guest inquiries to this new account
   try {
-    // Get the newly created user id via session
     const session = await auth.api.getSession({ headers: await headers() });
     if (session?.user?.id) {
       await supabaseAdmin
@@ -154,7 +171,7 @@ export async function customerSignupAction(
         .is("user_id", null);
     }
   } catch {
-    // Non-fatal — account is already created, inquiry linking can be retried
+    // Non-fatal
   }
 
   redirect("/account");

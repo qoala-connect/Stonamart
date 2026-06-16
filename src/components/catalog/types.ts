@@ -66,6 +66,7 @@ export interface CatalogProduct {
   origin: string;
   bg: string; // CSS gradient for thumbnail
   textLight: boolean;
+  imageUrl?: string; // hero photo URL (vendor-submitted products)
 }
 
 export interface FilterState {

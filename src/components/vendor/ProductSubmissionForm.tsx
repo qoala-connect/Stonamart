@@ -30,7 +30,7 @@ import { emptyStep3 } from "./types";
 
 // ─── Shared field styles ──────────────────────────────────────────────────────
 const inputCls =
-  "w-full px-3.5 py-2.5 text-sm font-sans bg-cream-50 border border-stone-dark/10 rounded-xl text-stone-950 placeholder:text-stone-dark/30 focus:outline-none focus:border-amber-gold/50 focus:ring-2 focus:ring-amber-gold/10 transition-all";
+  "w-full px-3.5 py-2.5 text-sm font-sans bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-gold/60 focus:ring-2 focus:ring-amber-gold/12 transition-all";
 const selectCls = `${inputCls} appearance-none cursor-pointer`;
 const labelCls =
   "block text-[10px] font-sans font-semibold uppercase tracking-[0.12em] text-stone-dark/42 mb-1.5";
@@ -198,7 +198,7 @@ function MediaSlot({
           <>
             {/* Preview */}
             {isVideo ? (
-              <div className="absolute inset-0 bg-stone-950 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
                 <Film size={20} className="text-amber-gold/70" />
                 <p className="absolute bottom-2 left-0 right-0 text-center text-[9px] font-sans text-stone-light/50 truncate px-2">
                   {file!.name}
@@ -230,7 +230,7 @@ function MediaSlot({
                 e.stopPropagation();
                 onClear();
               }}
-              className="absolute top-1.5 right-1.5 w-5 h-5 bg-stone-950/60 hover:bg-stone-950/80 rounded-full flex items-center justify-center text-white transition-colors"
+              className="absolute top-1.5 right-1.5 w-5 h-5 bg-gray-700/70 hover:bg-gray-700/90 rounded-full flex items-center justify-center text-white transition-colors"
             >
               <X size={9} />
             </button>
@@ -821,7 +821,7 @@ export function ProductSubmissionForm({
               onClick={goNext}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-sans font-semibold rounded-xl bg-stone-950 text-stone-light hover:bg-stone-dark/85 transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-sans font-semibold rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition-colors"
             >
               Next
               <ArrowRight size={14} />

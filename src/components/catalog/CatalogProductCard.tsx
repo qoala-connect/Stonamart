@@ -67,28 +67,50 @@ export function CatalogProductCard({
         >
           {/* Thumbnail — stone texture, 220px tall */}
           <div className="relative h-52 overflow-hidden">
-            {/* Stone texture background with zoom */}
-            <motion.div
-              className="absolute inset-0"
-              style={{ background: product.bg }}
-              variants={{
-                rest: { scale: 1 },
-                hover: {
-                  scale: 1.07,
-                  transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
-                },
-              }}
-            />
-
-            {/* SVG noise texture */}
-            <div
-              className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E\")",
-                backgroundSize: "128px 128px",
-              }}
-            />
+            {product.imageUrl ? (
+              /* Real product photo */
+              <motion.div
+                className="absolute inset-0"
+                variants={{
+                  rest: { scale: 1 },
+                  hover: {
+                    scale: 1.07,
+                    transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+                  },
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </motion.div>
+            ) : (
+              <>
+                {/* Stone texture gradient with zoom */}
+                <motion.div
+                  className="absolute inset-0"
+                  style={{ background: product.bg }}
+                  variants={{
+                    rest: { scale: 1 },
+                    hover: {
+                      scale: 1.07,
+                      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+                    },
+                  }}
+                />
+                {/* SVG noise texture */}
+                <div
+                  className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E\")",
+                    backgroundSize: "128px 128px",
+                  }}
+                />
+              </>
+            )}
 
             {/* Gradient scrim */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />

@@ -7,6 +7,7 @@ import {
   MapPin, Shield, Sparkles, TrendingUp, Users,
   CheckCircle2, ArrowRight, Star, Package, Award,
 } from "lucide-react";
+import { MarbleOverlay } from "@/components/ui";
 
 // ─── Fade-up helper ───────────────────────────────────────────────────────────
 function FadeUp({
@@ -96,11 +97,6 @@ const TIMELINE = [
   },
 ];
 
-// ─── Stone BG for section accent ─────────────────────────────────────────────
-const SECTION_STONE_BG = [
-  "radial-gradient(ellipse at 30% 50%, rgba(201,169,97,0.07) 0%, transparent 60%)",
-  "linear-gradient(160deg, #faf9f7 0%, #f3f1ee 100%)",
-].join(", ");
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export function AboutPage() {
@@ -181,8 +177,17 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
-      <section className="bg-white border-y border-stone-dark/6">
+      {/* ── Stats bar — White Carrara marble ── */}
+      <section
+        className="border-y border-stone-dark/8 relative overflow-hidden"
+        style={{
+          background: [
+            "radial-gradient(ellipse at 30% 50%, rgba(201,169,97,0.06) 0%, transparent 55%)",
+            "linear-gradient(155deg, #f9f7f4 0%, #f1ece5 50%, #f7f3ed 100%)",
+          ].join(", "),
+        }}
+      >
+        <MarbleOverlay variant="white" intensity={0.9} />
         <div className="max-w-5xl mx-auto px-6 md:px-10 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((stat, i) => {
@@ -207,8 +212,17 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Mission ── */}
-      <section className="py-24" style={{ background: SECTION_STONE_BG }}>
+      {/* ── Mission — Cream Travertine ── */}
+      <section
+        className="py-24 relative overflow-hidden"
+        style={{
+          background: [
+            "radial-gradient(ellipse at 20% 30%, rgba(201,169,97,0.08) 0%, transparent 55%)",
+            "linear-gradient(145deg, #f0e7d8 0%, #e8dcc9 40%, #ede4d2 70%, #f0e8da 100%)",
+          ].join(", "),
+        }}
+      >
+        <MarbleOverlay variant="cream" intensity={0.85} />
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             {/* Left: text */}
@@ -279,8 +293,17 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Values ── */}
-      <section className="py-24 bg-white">
+      {/* ── Values — White Carrara marble ── */}
+      <section
+        className="py-24 relative overflow-hidden"
+        style={{
+          background: [
+            "radial-gradient(ellipse at 70% 30%, rgba(201,169,97,0.06) 0%, transparent 50%)",
+            "linear-gradient(158deg, #f8f6f3 0%, #f0ebe4 40%, #f5f1ea 70%, #f9f6f2 100%)",
+          ].join(", "),
+        }}
+      >
+        <MarbleOverlay variant="white" intensity={0.95} />
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <FadeUp className="text-center mb-14">
             <p className="text-[10px] font-sans font-bold text-amber-gold uppercase tracking-[0.2em] mb-3">
@@ -296,7 +319,7 @@ export function AboutPage() {
               const Icon = v.icon;
               return (
                 <FadeUp key={v.title} delay={i * 0.1}>
-                  <div className="p-6 rounded-2xl border border-stone-dark/7 bg-cream-50 hover:border-amber-gold/25 hover:shadow-lg hover:shadow-stone-dark/4 transition-all duration-300 group">
+                  <div className="p-6 rounded-2xl border border-stone-dark/8 bg-white/60 hover:border-amber-gold/30 hover:shadow-lg hover:shadow-stone-dark/5 transition-all duration-300 group backdrop-blur-sm">
                     <div className="w-10 h-10 rounded-xl bg-stone-950 flex items-center justify-center mb-4 group-hover:bg-amber-gold transition-colors duration-300">
                       <Icon size={17} className="text-white group-hover:text-stone-950 transition-colors duration-300" />
                     </div>
@@ -314,8 +337,17 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Timeline ── */}
-      <section className="py-24" style={{ background: SECTION_STONE_BG }}>
+      {/* ── Timeline — Silver Grey marble ── */}
+      <section
+        className="py-24 relative overflow-hidden"
+        style={{
+          background: [
+            "radial-gradient(ellipse at 25% 25%, rgba(255,255,255,0.4) 0%, transparent 58%)",
+            "linear-gradient(145deg, #dddad5 0%, #d4d0ca 38%, #e0dcd7 65%, #dbd8d2 100%)",
+          ].join(", "),
+        }}
+      >
+        <MarbleOverlay variant="grey" intensity={0.95} />
         <div className="max-w-4xl mx-auto px-6 md:px-10">
           <FadeUp className="mb-14">
             <p className="text-[10px] font-sans font-bold text-amber-gold uppercase tracking-[0.2em] mb-3">
@@ -343,7 +375,7 @@ export function AboutPage() {
 
                     {/* Card */}
                     <div className={`flex-1 md:w-[calc(50%-2.5rem)] md:px-0 ${i % 2 === 0 ? "md:pr-14 md:text-right" : "md:pl-14 md:ml-auto"}`}>
-                      <div className="bg-white rounded-2xl border border-stone-dark/7 px-6 py-5 shadow-sm">
+                      <div className="bg-white/65 rounded-2xl border border-stone-dark/8 px-6 py-5 shadow-sm relative overflow-hidden"><MarbleOverlay variant="grey" intensity={0.4} />
                         <h3 className="font-serif text-[1rem] font-bold text-stone-950 mb-1.5">
                           {item.title}
                         </h3>
@@ -360,8 +392,17 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="py-20 bg-stone-950 relative overflow-hidden">
+      {/* ── CTA — Black Nero Marquina marble ── */}
+      <section
+        className="py-20 relative overflow-hidden"
+        style={{
+          background: [
+            "radial-gradient(ellipse at 25% 25%, rgba(201,169,97,0.09) 0%, transparent 50%)",
+            "linear-gradient(148deg, #0a0a0a 0%, #111111 45%, #0d0d0d 100%)",
+          ].join(", "),
+        }}
+      >
+        <MarbleOverlay variant="black" intensity={0.9} />
         {/* Noise */}
         <svg className="absolute inset-0 w-full h-full opacity-[0.04] pointer-events-none" style={{ mixBlendMode: "overlay" }}>
           <filter id="cta-noise">
