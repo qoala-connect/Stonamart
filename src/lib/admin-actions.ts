@@ -130,6 +130,9 @@ export type PendingProduct = {
 export async function getPendingProducts(): Promise<PendingProduct[]> {
   await requireAdmin();
   try {
+    // Ensure videoUrl column exists (idempotent — safe to run every time)
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
+
     const { rows } = await db.query(`
       SELECT
         p.id, p."vendorId", p.name, p."materialType", p.category,

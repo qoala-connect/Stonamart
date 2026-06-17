@@ -189,6 +189,9 @@ export async function submitProduct(
     return { ok: false, error: "Your account is not yet active." };
 
   try {
+    // Ensure videoUrl column exists (idempotent)
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
+
     const { rows } = await db.query(
       `INSERT INTO products (
         "vendorId", name, "materialType", category, color, finish,
