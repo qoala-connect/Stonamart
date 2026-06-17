@@ -22,33 +22,30 @@ async function ensureImageBucket() {
   }
 }
 
-export async function uploadProductVideo(
-  formData: FormData
-): Promise<{ url: string | null }> {
+// Returns a signed upload URL for direct client-to-Supabase upload (avoids server action body size limit)
+export async function createVideoUploadUrl(
+  filename: string
+): Promise<{ signedUrl: string | null; publicUrl: string | null }> {
   const session = await getServerSession();
-  if (!session || session.user.role !== "VENDOR") return { url: null };
+  if (!session || session.user.role !== "VENDOR")
+    return { signedUrl: null, publicUrl: null };
 
   await ensureImageBucket();
 
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) return { url: null };
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "mp4";
+  const path = `${session.user.id}/video-${Date.now()}.${ext}`;
 
-  try {
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
-    const path = `${session.user.id}/video-${Date.now()}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
+  const { data, error } = await supabaseAdmin.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .createSignedUploadUrl(path);
 
-    const { error } = await supabaseAdmin.storage
-      .from(PRODUCT_IMAGE_BUCKET)
-      .upload(path, buffer, { contentType: file.type || "video/mp4", upsert: true });
+  if (error || !data) return { signedUrl: null, publicUrl: null };
 
-    if (error) return { url: null };
+  const { data: urlData } = supabaseAdmin.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .getPublicUrl(path);
 
-    const { data } = supabaseAdmin.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
-    return { url: data?.publicUrl ?? null };
-  } catch {
-    return { url: null };
-  }
+  return { signedUrl: data.signedUrl, publicUrl: urlData?.publicUrl ?? null };
 }
 
 export async function uploadProductImages(

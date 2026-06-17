@@ -12,7 +12,7 @@ import { KPICards } from "./KPICards";
 import { ListingsTable } from "./ListingsTable";
 import { ProductSubmissionForm } from "./ProductSubmissionForm";
 import { BG_FOR_MATERIAL } from "./data";
-import { submitProduct, uploadProductImages, uploadProductVideo } from "@/lib/vendor-actions";
+import { submitProduct, uploadProductImages, createVideoUploadUrl } from "@/lib/vendor-actions";
 import type {
   VendorListing,
   ListingStatus,
@@ -448,10 +448,17 @@ export function VendorPortal({
         const videoFile = data.step3.files[6];
         if (videoFile) {
           try {
-            const fd = new FormData();
-            fd.append("file", videoFile);
-            const { url } = await uploadProductVideo(fd);
-            videoUrl = url;
+            // Get a signed upload URL from server, then upload directly from
+            // browser to Supabase — avoids the 1 MB server-action body limit.
+            const { signedUrl, publicUrl } = await createVideoUploadUrl(videoFile.name);
+            if (signedUrl && publicUrl) {
+              const res = await fetch(signedUrl, {
+                method: "PUT",
+                body: videoFile,
+                headers: { "Content-Type": videoFile.type || "video/mp4" },
+              });
+              if (res.ok) videoUrl = publicUrl;
+            }
           } catch {
             // Video upload failed — proceed without it
           }
