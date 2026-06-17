@@ -208,11 +208,6 @@ export function VendorRegisterForm() {
     if (n === 2) {
       if (!s2.companyName.trim()) errs.companyName = "Required";
       if (!s2.phone.trim()) errs.phone = "Required";
-      if (!s2.gstNumber.trim()) {
-        errs.gstNumber = "GST number is required";
-      } else if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(s2.gstNumber.trim())) {
-        errs.gstNumber = "Enter a valid 15-character GST number";
-      }
     }
     if (n === 3) {
       if (!s3.businessAddress.trim()) errs.businessAddress = "Required";
