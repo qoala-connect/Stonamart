@@ -48,6 +48,8 @@ export default async function VendorDashboardPage() {
       createdAt: Math.floor(new Date(row.createdAt).getTime() / 1000),
       bg: mat.bg,
       textLight: mat.textLight,
+      imageUrls: row.imageUrls ?? [],
+      videoUrl: row.videoUrl ?? null,
     };
   });
 

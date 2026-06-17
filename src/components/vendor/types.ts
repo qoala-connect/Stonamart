@@ -28,6 +28,8 @@ export interface VendorListing {
   adminFeedback?: string;
   bg: string;
   textLight: boolean;
+  imageUrls?: string[];
+  videoUrl?: string | null;
 }
 
 // ─── Form state shapes ─────────────────────────────────────────────────────────

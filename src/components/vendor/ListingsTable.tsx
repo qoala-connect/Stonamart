@@ -152,6 +152,7 @@ function ListingRow({
   onToggleExpand,
   onToggleOOS,
   onEdit,
+  onView,
   index,
 }: {
   listing: VendorListing;
@@ -159,6 +160,7 @@ function ListingRow({
   onToggleExpand: () => void;
   onToggleOOS: () => void;
   onEdit: () => void;
+  onView: () => void;
   index: number;
 }) {
   const sc = STATUS_CFG[listing.status];
@@ -254,6 +256,17 @@ function ListingRow({
           </span>
         </div>
 
+        {/* View details button */}
+        <motion.button
+          onClick={onView}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.93 }}
+          title="View Details"
+          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-stone-dark/5 text-stone-dark/40 hover:bg-amber-gold/10 hover:text-amber-gold transition-colors"
+        >
+          <Eye size={13} />
+        </motion.button>
+
         {/* Action: expand alert */}
         {hasAlert ? (
           <motion.button
@@ -298,6 +311,7 @@ interface ListingsTableProps {
   listings: VendorListing[];
   onToggleOOS: (id: string) => void;
   onEditListing: (id: string) => void;
+  onViewDetails: (id: string) => void;
 }
 
 const STATUS_FILTER_OPTIONS: { value: string; label: string }[] = [
@@ -314,6 +328,7 @@ export function ListingsTable({
   listings,
   onToggleOOS,
   onEditListing,
+  onViewDetails,
 }: ListingsTableProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -437,6 +452,7 @@ export function ListingsTable({
               onToggleExpand={() => toggleExpand(listing.id)}
               onToggleOOS={() => onToggleOOS(listing.id)}
               onEdit={() => onEditListing(listing.id)}
+              onView={() => onViewDetails(listing.id)}
             />
           ))}
         </div>

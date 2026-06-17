@@ -117,6 +117,8 @@ export type ProductRow = {
   status: string;
   views: number;
   createdAt: string;
+  imageUrls: string[];
+  videoUrl: string | null;
 };
 
 export type SubmitProductInput = {
@@ -164,16 +166,18 @@ export async function getVendorProfile(): Promise<VendorProfileData | null> {
 export async function getVendorProducts(): Promise<ProductRow[]> {
   const session = await requireVendor();
   try {
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
     const { rows } = await db.query(
       `SELECT id, "vendorId", name, "materialType", category, color, finish,
         thickness, dimensions, "warehouseCity", "pricePerUnit", unit,
-        "stockQty", "isOutOfStock", status, views, "createdAt"
+        "stockQty", "isOutOfStock", status, views, "createdAt",
+        COALESCE("imageUrls", '{}') AS "imageUrls",
+        "videoUrl"
        FROM products WHERE "vendorId" = $1 ORDER BY "createdAt" DESC`,
       [session.user.id]
     );
     return rows;
   } catch {
-    // Table may not exist yet
     return [];
   }
 }
