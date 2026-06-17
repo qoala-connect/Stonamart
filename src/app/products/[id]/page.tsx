@@ -64,6 +64,7 @@ async function getDbProduct(id: string): Promise<CatalogProduct | null> {
       imageUrl: Array.isArray(r.imageUrls) && r.imageUrls.length > 0
         ? r.imageUrls[0]
         : undefined,
+      imageUrls: Array.isArray(r.imageUrls) ? r.imageUrls : [],
     };
   } catch {
     return null;

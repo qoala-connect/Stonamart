@@ -187,7 +187,10 @@ function RegisterSubmit() {
 function CustomerSignupFormInline() {
   const [state, formAction] = useActionState(customerSignupAction, {});
   const [showPw, setShowPw] = React.useState(false);
+  const [showConfirmPw, setShowConfirmPw] = React.useState(false);
   const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [confirmError, setConfirmError] = React.useState("");
 
   const checks = [
     { label: "8+ chars",   pass: password.length >= 8 },
@@ -209,7 +212,14 @@ function CustomerSignupFormInline() {
         )}
       </AnimatePresence>
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-4" onSubmit={(e) => {
+        if (password !== confirmPassword) {
+          e.preventDefault();
+          setConfirmError("Passwords do not match");
+        } else {
+          setConfirmError("");
+        }
+      }}>
         <FormField label="Full Name" error={state.fieldErrors?.name}>
           <AuthInput name="name" type="text" placeholder="Arjun Mehta" autoComplete="name" error={!!state.fieldErrors?.name} required />
         </FormField>
@@ -239,6 +249,29 @@ function CustomerSignupFormInline() {
                 </div>
               ))}
             </div>
+          )}
+        </FormField>
+
+        <FormField label="Confirm Password" error={confirmError || state.fieldErrors?.confirmPassword}>
+          <div className="relative">
+            <AuthInput
+              type={showConfirmPw ? "text" : "password"}
+              placeholder="Re-enter password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => { setConfirmPassword(e.target.value); if (confirmError) setConfirmError(""); }}
+              error={!!confirmError}
+              className="pr-12"
+            />
+            <button type="button" onClick={() => setShowConfirmPw((v) => !v)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors">
+              {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          {confirmPassword && confirmPassword === password && (
+            <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1">
+              <CheckCircle2 size={11} /> Passwords match
+            </p>
           )}
         </FormField>
 

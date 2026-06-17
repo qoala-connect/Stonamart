@@ -4,14 +4,13 @@ import React from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { loginAction } from "@/lib/auth-actions";
 import {
   FormField,
   AuthInput,
   SubmitButton,
-  AuthDivider,
 } from "./AuthLayout";
 
 function SubmitRow() {
@@ -101,32 +100,6 @@ export function LoginForm() {
         <SubmitRow />
       </form>
 
-      <AuthDivider label="New to Stonamart?" />
-
-      {/* Signup links — all three roles */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <Link
-          href="/signup"
-          className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white border border-stone-dark/10 rounded-xl text-[12px] font-sans font-semibold text-stone-dark/60 hover:border-amber-gold/35 hover:text-stone-950 hover:bg-amber-gold/4 transition-all duration-200"
-        >
-          <span className="text-base">🛒</span>
-          Customer
-        </Link>
-        <Link
-          href="/vendor/register"
-          className="flex flex-col items-center gap-1.5 px-3 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[12px] font-sans font-semibold text-emerald-700 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all duration-200"
-        >
-          <span className="text-base">🏪</span>
-          Vendor
-        </Link>
-        <Link
-          href="/signup?role=admin"
-          className="flex flex-col items-center gap-1.5 px-3 py-3 bg-blue-500/5 border border-blue-500/18 rounded-xl text-[12px] font-sans font-semibold text-blue-600 hover:bg-blue-500/10 hover:border-blue-500/35 transition-all duration-200"
-        >
-          <span className="text-base">⚙️</span>
-          Admin
-        </Link>
-      </div>
     </div>
   );
 }

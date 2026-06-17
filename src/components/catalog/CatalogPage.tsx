@@ -3,17 +3,14 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Camera, ArrowRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/ui";
 import { FilterSidebar } from "./FilterSidebar";
 import { SortingHeader } from "./SortingHeader";
 import { CatalogProductCard } from "./CatalogProductCard";
 import { CatalogProductListItem } from "./CatalogProductListItem";
 import { AIImageSearchModal } from "./AIImageSearchModal";
-import {
-  CATALOG_PRODUCTS,
-  AI_SEARCH_MOCK_RESULTS,
-  AI_ALTERNATIVES_MOCK,
-} from "./data";
+import { CATALOG_PRODUCTS } from "./data";
 import { EMPTY_FILTERS } from "./types";
 import type { CatalogProduct, FilterState, ViewMode, SortOption } from "./types";
 
@@ -126,6 +123,8 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
     () => [...dbProducts, ...CATALOG_PRODUCTS],
     [dbProducts]
   );
+  const searchParams = useSearchParams();
+
   // ── State ──
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
@@ -147,6 +146,18 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
       ?.split("=")[1];
     if (fromCookie) setUserCity(fromCookie);
   }, []);
+
+  // Activate AI search if navigated here with ?aiIds= (from header modal)
+  useEffect(() => {
+    const aiIds = searchParams.get("aiIds");
+    if (aiIds) {
+      const ids = aiIds.split(",").filter(Boolean);
+      if (ids.length > 0) {
+        setVisuallySimilarIds(ids);
+        setAiSearchActive(true);
+      }
+    }
+  }, [searchParams]);
 
   // ── Filter logic ──
   const handleToggleFilter = useCallback(
@@ -250,11 +261,15 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
   }, [aiSearchActive, sortedProducts, visuallySimilarIds]);
 
   const alternativeProducts = useMemo(() => {
-    if (!aiSearchActive) return [];
-    return ALL_PRODUCTS.filter((p) =>
-      AI_ALTERNATIVES_MOCK.includes(p.id)
+    if (!aiSearchActive || visuallySimilarIds.length === 0) return [];
+    const similarSet = new Set(visuallySimilarIds);
+    const similarMaterials = new Set(
+      ALL_PRODUCTS.filter((p) => similarSet.has(p.id)).map((p) => p.materialType)
     );
-  }, [aiSearchActive]);
+    return ALL_PRODUCTS.filter(
+      (p) => !similarSet.has(p.id) && similarMaterials.has(p.materialType)
+    ).slice(0, 6);
+  }, [aiSearchActive, visuallySimilarIds, ALL_PRODUCTS]);
 
   const cityCapitalized = userCity.charAt(0).toUpperCase() + userCity.slice(1);
 

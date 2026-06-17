@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, FileText, ShieldCheck, BarChart3, Settings,
-  Package, ChevronRight, Bell, Search, Layers, LogOut, Gem,
+  Package, ChevronRight, Bell, Search, Layers, LogOut, Gem, Radio,
 } from "lucide-react";
 import { signOutAction } from "@/lib/auth-actions";
 import { LeadPipeline } from "./crm/LeadPipeline";
@@ -12,11 +12,12 @@ import { LeadDetailCard } from "./crm/LeadDetailCard";
 import { QuotationGenerator } from "./quotation/QuotationGenerator";
 import { VendorApprovalSection } from "./VendorApprovalSection";
 import { ProductReviewSection } from "./ProductReviewSection";
+import { ProductRequestBroadcast } from "./ProductRequestBroadcast";
 import { MOCK_LEADS } from "./data";
 import type { Lead, LeadStage } from "./types";
 import type { VendorApplication, PendingProduct } from "@/lib/admin-actions";
 
-type NavId = "crm" | "quotations" | "products" | "vendors" | "analytics" | "settings";
+type NavId = "crm" | "quotations" | "products" | "vendors" | "sourcing" | "analytics" | "settings";
 
 const NAV_ITEMS: {
   id: NavId;
@@ -28,6 +29,7 @@ const NAV_ITEMS: {
   { id: "quotations", label: "Quotations",     icon: FileText   },
   { id: "products",   label: "Product Review", icon: Package    },
   { id: "vendors",    label: "Vendors",        icon: ShieldCheck },
+  { id: "sourcing",   label: "Sourcing",       icon: Radio      },
   { id: "analytics",  label: "Analytics",      icon: BarChart3, disabled: true },
   { id: "settings",   label: "Settings",       icon: Settings,  disabled: true },
 ];
@@ -298,6 +300,7 @@ export function AdminPortal({
     quotations:{ title: "Quotation Generator",  subtitle: "Build, price, and dispatch professional quotations" },
     products:  { title: "Product Review",       subtitle: "Approve or request changes to vendor listings" },
     vendors:   { title: "Vendor Management",    subtitle: "Review applications and manage verified stone suppliers" },
+    sourcing:  { title: "Sourcing Broadcast",   subtitle: "Request products from all vendors — they reply if they have it in stock" },
     analytics: { title: "Analytics",            subtitle: "Sales performance, pipeline velocity, and trends" },
     settings:  { title: "Settings",             subtitle: "Configure platform preferences and team access" },
   };
@@ -341,6 +344,7 @@ export function AdminPortal({
             {active === "products" && (
               <ProductReviewSection initialProducts={pendingProducts} />
             )}
+            {active === "sourcing"  && <ProductRequestBroadcast />}
             {active === "analytics" && <ComingSoon label="Analytics" />}
             {active === "settings"  && <ComingSoon label="Settings" />}
           </motion.div>

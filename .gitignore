@@ -32,3 +32,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# CLIP model cache (downloaded by @xenova/transformers on first use)
+/.transformers-cache

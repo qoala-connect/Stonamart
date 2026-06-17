@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 import { Container } from "@/components/ui";
 import {
   MapPin, ChevronDown, Menu, X, Check,
-  User, Building2, ShieldCheck, LogIn, ArrowRight, Gem, Sparkles,
+  User, Building2, ShieldCheck, LogIn, ArrowRight, Gem, Sparkles, Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AIImageSearchModal } from "@/components/catalog/AIImageSearchModal";
 
 const CITIES = [
   { id: "mumbai",    name: "Mumbai",    region: "Maharashtra" },
@@ -123,7 +124,7 @@ const ROLE_OPTIONS = [
   {
     id: "admin", label: "Admin", tagline: "Operations Portal",
     desc: "Approve vendors, review listings, and oversee all platform operations.",
-    icon: ShieldCheck, href: "/login", Bg: AdminMarble, textLight: true,
+    icon: ShieldCheck, href: "/admin/auth", Bg: AdminMarble, textLight: true,
     accentColor: "rgba(201,169,97,0.90)", iconBorder: "rgba(255,255,255,0.20)",
     chipBg: "rgba(255,255,255,0.10)", chipBorder: "rgba(255,255,255,0.20)", chipText: "rgba(255,255,255,0.75)",
   },
@@ -255,14 +256,15 @@ function LoginModal({ onClose }: { onClose: () => void }) {
 const PORTAL_OPTIONS_MOBILE = [
   { id: "customer", label: "Customer", desc: "Browse & enquire for your project",  icon: User,        href: "/customer/auth",   iconBg: "bg-blue-50",        iconColor: "text-blue-500"       },
   { id: "vendor",   label: "Vendor",   desc: "List inventory & manage orders",     icon: Building2,   href: "/vendor/register", iconBg: "bg-amber-50",       iconColor: "text-amber-600"      },
-  { id: "admin",    label: "Admin",    desc: "Internal operations portal",         icon: ShieldCheck, href: "/login",           iconBg: "bg-slate-100",      iconColor: "text-slate-500"      },
+  { id: "admin",    label: "Admin",    desc: "Internal operations portal",         icon: ShieldCheck, href: "/admin/auth",      iconBg: "bg-slate-100",      iconColor: "text-slate-500"      },
 ] as const;
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 export function Header() {
-  const [cityOpen,     setCityOpen]     = useState(false);
-  const [loginOpen,    setLoginOpen]    = useState(false);
-  const [mobileOpen,   setMobileOpen]   = useState(false);
+  const [cityOpen,        setCityOpen]        = useState(false);
+  const [loginOpen,       setLoginOpen]       = useState(false);
+  const [imageSearchOpen, setImageSearchOpen] = useState(false);
+  const [mobileOpen,      setMobileOpen]      = useState(false);
   const [selectedCity, setSelectedCity] = useState("mumbai");
   const [scrolled,     setScrolled]     = useState(false);
   const cityRef  = useRef<HTMLDivElement>(null);
@@ -490,6 +492,21 @@ export function Header() {
                   <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform duration-200 text-amber-gold" />
                 </Link>
 
+                {/* Image Search button */}
+                <motion.button
+                  onClick={() => setImageSearchOpen(true)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Search by image"
+                  className="hidden md:flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200"
+                  style={{
+                    background: "rgba(201,169,97,0.10)",
+                    border: "1px solid rgba(201,169,97,0.30)",
+                  }}
+                >
+                  <Camera size={15} className="text-amber-gold" />
+                </motion.button>
+
                 {/* Sign In button — premium dark pill */}
                 <motion.button
                   onClick={() => setLoginOpen(true)}
@@ -609,6 +626,12 @@ export function Header() {
       <AnimatePresence>
         {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
       </AnimatePresence>
+
+      {/* AI Image Search modal */}
+      <AIImageSearchModal
+        isOpen={imageSearchOpen}
+        onClose={() => setImageSearchOpen(false)}
+      />
     </>
   );
 }

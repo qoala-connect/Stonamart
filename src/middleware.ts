@@ -31,10 +31,10 @@ export function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE);
   const isAuthenticated = !!sessionCookie?.value;
 
-  // Vendor register is public — allow always
-  if (pathname.startsWith("/vendor/register")) {
-    return NextResponse.next();
-  }
+  // Public auth pages — always allow
+  if (pathname.startsWith("/vendor/register")) return NextResponse.next();
+  if (pathname.startsWith("/admin/auth"))       return NextResponse.next();
+  if (pathname.startsWith("/customer/auth"))    return NextResponse.next();
 
   // Block unauthenticated access to protected routes
   const needsAuth = AUTH_REQUIRED_PREFIXES.some((prefix) =>

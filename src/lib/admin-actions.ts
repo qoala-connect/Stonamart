@@ -123,16 +123,38 @@ export async function approveProduct(
 ): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   try {
-    await db.query(
-      `UPDATE products SET status = 'APPROVED', "updatedAt" = NOW() WHERE id = $1`,
+    const { rows } = await db.query(
+      `UPDATE products SET status = 'APPROVED', "updatedAt" = NOW()
+       WHERE id = $1
+       RETURNING "imageUrls"`,
       [productId]
     );
     revalidatePath("/products");
     revalidatePath("/admin/dashboard");
+
+    // Fire-and-forget: generate CLIP embedding for the first product image
+    const imageUrls: string[] = rows[0]?.imageUrls ?? [];
+    if (imageUrls.length > 0) {
+      generateEmbeddingBackground(productId, imageUrls[0]).catch(() => {});
+    }
+
     return { ok: true };
   } catch (err) {
     console.error("[approveProduct]", err);
     return { ok: false, error: "Failed to approve product." };
+  }
+}
+
+async function generateEmbeddingBackground(productId: string, imageUrl: string) {
+  try {
+    const { embedImageUrl, toVectorLiteral } = await import("./clip");
+    const embedding = await embedImageUrl(imageUrl);
+    await db.query(
+      `UPDATE products SET embedding = $1::vector WHERE id = $2`,
+      [toVectorLiteral(embedding), productId]
+    );
+  } catch {
+    // Non-fatal — embedding can be backfilled later via /api/admin/embed-products
   }
 }
 

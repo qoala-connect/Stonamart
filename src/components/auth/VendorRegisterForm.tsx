@@ -28,7 +28,7 @@ const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/web
 const MAX_FILE_SIZE_MB = 10;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Step1Data { contactPerson: string; email: string; password: string; }
+interface Step1Data { contactPerson: string; email: string; password: string; confirmPassword: string; }
 interface Step2Data { companyName: string; phone: string; gstNumber: string; }
 interface Step3Data { businessAddress: string; city: string; }
 interface UploadedFile { file: File; preview?: string; uploading: boolean; url?: string; error?: string; }
@@ -189,11 +189,12 @@ export function VendorRegisterForm() {
   const [submitting, setSubmitting] = useState(false);
 
   // Step data
-  const [s1, setS1] = useState<Step1Data>({ contactPerson: "", email: "", password: "" });
+  const [s1, setS1] = useState<Step1Data>({ contactPerson: "", email: "", password: "", confirmPassword: "" });
   const [s2, setS2] = useState<Step2Data>({ companyName: "", phone: "", gstNumber: "" });
   const [s3, setS3] = useState<Step3Data>({ businessAddress: "", city: "" });
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   // ── Validation ──
   const validateStep = (n: number): boolean => {
@@ -202,6 +203,7 @@ export function VendorRegisterForm() {
       if (!s1.contactPerson.trim()) errs.contactPerson = "Required";
       if (!s1.email.trim() || !s1.email.includes("@")) errs.email = "Valid email required";
       if (s1.password.length < 8) errs.password = "Min. 8 characters";
+      if (s1.confirmPassword !== s1.password) errs.confirmPassword = "Passwords do not match";
     }
     if (n === 2) {
       if (!s2.companyName.trim()) errs.companyName = "Required";
@@ -390,14 +392,34 @@ export function VendorRegisterForm() {
                     error={!!fieldErrors.password}
                     className="pr-12"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw((v) => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors"
-                  >
+                  <button type="button" onClick={() => setShowPw((v) => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors">
                     {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </FormField>
+
+              <FormField label="Confirm Password" error={fieldErrors.confirmPassword}>
+                <div className="relative">
+                  <AuthInput
+                    type={showConfirmPw ? "text" : "password"}
+                    placeholder="Re-enter password"
+                    autoComplete="new-password"
+                    value={s1.confirmPassword}
+                    onChange={(e) => setS1((p) => ({ ...p, confirmPassword: e.target.value }))}
+                    error={!!fieldErrors.confirmPassword}
+                    className="pr-12"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPw((v) => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors">
+                    {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {s1.confirmPassword && s1.confirmPassword === s1.password && (
+                  <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1">
+                    <CheckCircle2 size={11} /> Passwords match
+                  </p>
+                )}
               </FormField>
             </motion.div>
           )}
