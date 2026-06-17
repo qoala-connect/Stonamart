@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useTransition } from "react";
+import React, { useState, useRef, useCallback, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Plus, BadgeCheck, MapPin, LogOut,
@@ -12,7 +12,7 @@ import { KPICards } from "./KPICards";
 import { ListingsTable } from "./ListingsTable";
 import { ProductSubmissionForm } from "./ProductSubmissionForm";
 import { BG_FOR_MATERIAL } from "./data";
-import { submitProduct, uploadProductImages, createVideoUploadUrl } from "@/lib/vendor-actions";
+import { submitProduct, updateProduct, uploadProductImages, createVideoUploadUrl } from "@/lib/vendor-actions";
 import type {
   VendorListing,
   ListingStatus,
@@ -344,6 +344,8 @@ export function VendorPortal({
     step1: FormStep1;
     step2: FormStep2;
   } | null>(null);
+  // useRef so handleFormSubmit ([] deps) always reads the fresh value
+  const editIdRef = useRef<string | null>(null);
   const [detailListingId, setDetailListingId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -364,11 +366,12 @@ export function VendorPortal({
     );
   }, []);
 
-  // ── Open edit for a CHANGES_REQUESTED listing ──
+  // ── Open edit for an existing listing ──
   const handleEditListing = useCallback(
     (id: string) => {
       const listing = listings.find((l) => l.id === id);
       if (!listing) return;
+      editIdRef.current = id;
       setEditData({
         step1: {
           name: listing.name,
@@ -399,12 +402,12 @@ export function VendorPortal({
     ) => {
       const { step1, step2 } = data;
       const mat = BG_FOR_MATERIAL[step1.materialType] ?? BG_FOR_MATERIAL.other;
+      const currentEditId = editIdRef.current; // capture before clearing
       setSubmitError(null);
+      setEditData(null);
+      editIdRef.current = null;
 
-      // Optimistically add to the list
-      const tempId = `tmp-${Date.now()}`;
-      const newListing: VendorListing = {
-        id: tempId,
+      const updatedFields: Partial<VendorListing> = {
         name: step1.name,
         materialType: step1.materialType,
         category: step1.category,
@@ -416,83 +419,102 @@ export function VendorPortal({
         pricePerUnit: parseFloat(step1.pricePerUnit) || 0,
         unit: step1.unit,
         stockQty: parseInt(step1.stockQty) || 0,
-        isOutOfStock: false,
         status: (action === "draft" ? "DRAFT" : "PENDING_APPROVAL") as ListingStatus,
-        views: 0,
-        createdAt: Math.floor(Date.now() / 1000),
         bg: mat.bg,
         textLight: mat.textLight,
       };
 
-      setListings((prev) => [newListing, ...prev]);
-      setEditData(null);
+      if (currentEditId) {
+        // ── UPDATE: patch the existing row in-place ──
+        setListings((prev) =>
+          prev.map((l) => (l.id === currentEditId ? { ...l, ...updatedFields } : l))
+        );
+      } else {
+        // ── INSERT: optimistically prepend a new row ──
+        const tempId = `tmp-${Date.now()}`;
+        const newListing: VendorListing = {
+          id: tempId,
+          isOutOfStock: false,
+          views: 0,
+          createdAt: Math.floor(Date.now() / 1000),
+          ...updatedFields,
+        } as VendorListing;
+        setListings((prev) => [newListing, ...prev]);
+
+        startTransition(async () => {
+          const { imageUrls, videoUrl } = await uploadMedia(data);
+          const result = await submitProduct({
+            ...updatedFields as Parameters<typeof submitProduct>[0],
+            imageUrls,
+            videoUrl,
+          });
+          if (result.ok && result.id) {
+            setListings((prev) =>
+              prev.map((l) => (l.id === tempId ? { ...l, id: result.id! } : l))
+            );
+          } else if (!result.ok) {
+            setSubmitError(result.error ?? "Failed to save listing.");
+          }
+        });
+      }
+
       setTimeout(() => setActiveTab("overview"), 2500);
 
-      // Upload images + video then persist to DB in background
-      startTransition(async () => {
-        let imageUrls: string[] = [];
-        let videoUrl: string | null = null;
-
-        const imageFiles = data.step3.files.slice(0, 6).filter(Boolean) as File[];
-        if (imageFiles.length > 0) {
-          try {
-            const fd = new FormData();
-            imageFiles.forEach((f) => fd.append("files", f));
-            const { urls } = await uploadProductImages(fd);
-            imageUrls = urls;
-          } catch {
-            // Upload failed — product saves without images
+      if (currentEditId) {
+        // Persist the update in background
+        startTransition(async () => {
+          const { imageUrls, videoUrl } = await uploadMedia(data);
+          const result = await updateProduct({
+            id: currentEditId,
+            ...updatedFields as Parameters<typeof submitProduct>[0],
+            imageUrls,
+            videoUrl,
+          });
+          if (!result.ok) {
+            setSubmitError(result.error ?? "Failed to update listing.");
           }
-        }
-
-        const videoFile = data.step3.files[6];
-        if (videoFile) {
-          try {
-            // Get a signed upload URL from server, then upload directly from
-            // browser to Supabase — avoids the 1 MB server-action body limit.
-            const { signedUrl, publicUrl } = await createVideoUploadUrl(videoFile.name);
-            if (signedUrl && publicUrl) {
-              const res = await fetch(signedUrl, {
-                method: "PUT",
-                body: videoFile,
-                headers: { "Content-Type": videoFile.type || "video/mp4" },
-              });
-              if (res.ok) videoUrl = publicUrl;
-            }
-          } catch {
-            // Video upload failed — proceed without it
-          }
-        }
-
-        const result = await submitProduct({
-          name: step1.name,
-          materialType: step1.materialType,
-          category: step1.category,
-          color: step2.color,
-          finish: step2.finish,
-          thickness: step2.thickness,
-          dimensions: step2.dimensions,
-          warehouseCity: step2.warehouseCity,
-          pricePerUnit: parseFloat(step1.pricePerUnit) || 0,
-          unit: step1.unit,
-          stockQty: parseInt(step1.stockQty) || 0,
-          status: action === "draft" ? "DRAFT" : "PENDING_APPROVAL",
-          imageUrls,
-          videoUrl,
         });
-
-        if (result.ok && result.id) {
-          // Replace temp id with real DB id
-          setListings((prev) =>
-            prev.map((l) => (l.id === tempId ? { ...l, id: result.id! } : l))
-          );
-        } else if (!result.ok) {
-          setSubmitError(result.error ?? "Failed to save listing.");
-        }
-      });
+      }
     },
     []
   );
+
+  // ── Upload helper (shared by create + update) ──
+  async function uploadMedia(data: { step1: FormStep1; step2: FormStep2; step3: FormStep3 }) {
+    let imageUrls: string[] = [];
+    let videoUrl: string | null = null;
+
+    const imageFiles = data.step3.files.slice(0, 6).filter(Boolean) as File[];
+    if (imageFiles.length > 0) {
+      try {
+        const fd = new FormData();
+        imageFiles.forEach((f) => fd.append("files", f));
+        const { urls } = await uploadProductImages(fd);
+        imageUrls = urls;
+      } catch {
+        // Upload failed — product saves without images
+      }
+    }
+
+    const videoFile = data.step3.files[6];
+    if (videoFile) {
+      try {
+        const { signedUrl, publicUrl } = await createVideoUploadUrl(videoFile.name);
+        if (signedUrl && publicUrl) {
+          const res = await fetch(signedUrl, {
+            method: "PUT",
+            body: videoFile,
+            headers: { "Content-Type": videoFile.type || "video/mp4" },
+          });
+          if (res.ok) videoUrl = publicUrl;
+        }
+      } catch {
+        // Video upload failed — proceed without it
+      }
+    }
+
+    return { imageUrls, videoUrl };
+  }
 
   const pendingCount = listings.filter(
     (l) => l.status === "PENDING_APPROVAL" || l.status === "CHANGES_REQUESTED"
@@ -544,6 +566,7 @@ export function VendorPortal({
               <motion.button
                 onClick={() => {
                   setEditData(null);
+                  editIdRef.current = null;
                   setActiveTab("submit");
                 }}
                 whileHover={{ scale: 1.02 }}
@@ -586,7 +609,10 @@ export function VendorPortal({
               active={activeTab}
               onChange={(t) => {
                 setActiveTab(t);
-                if (t === "submit") setEditData(null);
+                if (t === "submit") {
+                  setEditData(null);
+                  editIdRef.current = null;
+                }
               }}
               pendingCount={pendingCount}
             />

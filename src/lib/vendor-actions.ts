@@ -225,6 +225,44 @@ export async function submitProduct(
   }
 }
 
+export async function updateProduct(
+  data: SubmitProductInput & { id: string }
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getServerSession();
+  if (!session || session.user.role !== "VENDOR")
+    return { ok: false, error: "Unauthorized" };
+
+  try {
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
+
+    await db.query(
+      `UPDATE products SET
+         name = $1, "materialType" = $2, category = $3, color = $4,
+         finish = $5, thickness = $6, dimensions = $7, "warehouseCity" = $8,
+         "pricePerUnit" = $9, unit = $10, "stockQty" = $11, status = $12,
+         "imageUrls" = CASE WHEN cardinality($13::text[]) > 0
+                            THEN $13::text[] ELSE "imageUrls" END,
+         "videoUrl"   = CASE WHEN $14::text IS NOT NULL
+                            THEN $14::text ELSE "videoUrl" END,
+         "updatedAt"  = NOW()
+       WHERE id = $15 AND "vendorId" = $16`,
+      [
+        data.name, data.materialType, data.category, data.color,
+        data.finish, data.thickness, data.dimensions, data.warehouseCity,
+        data.pricePerUnit, data.unit, data.stockQty, data.status,
+        data.imageUrls ?? [],
+        data.videoUrl ?? null,
+        data.id,
+        session.user.id,
+      ]
+    );
+    return { ok: true };
+  } catch (err) {
+    console.error("[updateProduct]", err);
+    return { ok: false, error: "Failed to update product. Please try again." };
+  }
+}
+
 export async function toggleProductOOS(
   productId: string
 ): Promise<{ ok: boolean }> {
