@@ -22,6 +22,35 @@ async function ensureImageBucket() {
   }
 }
 
+export async function uploadProductVideo(
+  formData: FormData
+): Promise<{ url: string | null }> {
+  const session = await getServerSession();
+  if (!session || session.user.role !== "VENDOR") return { url: null };
+
+  await ensureImageBucket();
+
+  const file = formData.get("file") as File | null;
+  if (!file || file.size === 0) return { url: null };
+
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+    const path = `${session.user.id}/video-${Date.now()}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    const { error } = await supabaseAdmin.storage
+      .from(PRODUCT_IMAGE_BUCKET)
+      .upload(path, buffer, { contentType: file.type || "video/mp4", upsert: true });
+
+    if (error) return { url: null };
+
+    const { data } = supabaseAdmin.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
+    return { url: data?.publicUrl ?? null };
+  } catch {
+    return { url: null };
+  }
+}
+
 export async function uploadProductImages(
   formData: FormData
 ): Promise<{ urls: string[] }> {
@@ -104,6 +133,7 @@ export type SubmitProductInput = {
   stockQty: number;
   status: "DRAFT" | "PENDING_APPROVAL";
   imageUrls?: string[];
+  videoUrl?: string | null;
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -163,8 +193,8 @@ export async function submitProduct(
       `INSERT INTO products (
         "vendorId", name, "materialType", category, color, finish,
         thickness, dimensions, "warehouseCity", "pricePerUnit",
-        unit, "stockQty", status, "imageUrls"
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+        unit, "stockQty", status, "imageUrls", "videoUrl"
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING id`,
       [
         session.user.id,
@@ -181,6 +211,7 @@ export async function submitProduct(
         data.stockQty,
         data.status,
         data.imageUrls ?? [],
+        data.videoUrl ?? null,
       ]
     );
     return { ok: true, id: rows[0].id };

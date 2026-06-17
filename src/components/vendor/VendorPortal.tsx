@@ -9,7 +9,7 @@ import { KPICards } from "./KPICards";
 import { ListingsTable } from "./ListingsTable";
 import { ProductSubmissionForm } from "./ProductSubmissionForm";
 import { BG_FOR_MATERIAL } from "./data";
-import { submitProduct, uploadProductImages } from "@/lib/vendor-actions";
+import { submitProduct, uploadProductImages, uploadProductVideo } from "@/lib/vendor-actions";
 import type {
   VendorListing,
   ListingStatus,
@@ -166,10 +166,11 @@ export function VendorPortal({
       setEditData(null);
       setTimeout(() => setActiveTab("overview"), 2500);
 
-      // Upload images then persist to DB in background
+      // Upload images + video then persist to DB in background
       startTransition(async () => {
-        // Upload any images first, then save product with their URLs
         let imageUrls: string[] = [];
+        let videoUrl: string | null = null;
+
         const imageFiles = data.step3.files.slice(0, 6).filter(Boolean) as File[];
         if (imageFiles.length > 0) {
           try {
@@ -179,6 +180,18 @@ export function VendorPortal({
             imageUrls = urls;
           } catch {
             // Upload failed — product saves without images
+          }
+        }
+
+        const videoFile = data.step3.files[6];
+        if (videoFile) {
+          try {
+            const fd = new FormData();
+            fd.append("file", videoFile);
+            const { url } = await uploadProductVideo(fd);
+            videoUrl = url;
+          } catch {
+            // Video upload failed — proceed without it
           }
         }
 
@@ -196,6 +209,7 @@ export function VendorPortal({
           stockQty: parseInt(step1.stockQty) || 0,
           status: action === "draft" ? "DRAFT" : "PENDING_APPROVAL",
           imageUrls,
+          videoUrl,
         });
 
         if (result.ok && result.id) {

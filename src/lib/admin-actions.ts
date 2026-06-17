@@ -109,6 +109,8 @@ export type PendingProduct = {
   vendorId: string;
   vendorName: string;
   companyName: string | null;
+  vendorEmail: string | null;
+  vendorPhone: string | null;
   name: string;
   materialType: string;
   category: string;
@@ -120,6 +122,8 @@ export type PendingProduct = {
   pricePerUnit: number;
   unit: string;
   stockQty: number;
+  imageUrls: string[];
+  videoUrl: string | null;
   createdAt: string;
 };
 
@@ -131,8 +135,12 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
         p.id, p."vendorId", p.name, p."materialType", p.category,
         p.color, p.finish, p.thickness, p.dimensions,
         p."warehouseCity", p."pricePerUnit", p.unit, p."stockQty", p."createdAt",
-        u.name          AS "vendorName",
-        vp."companyName"
+        COALESCE(p."imageUrls", '{}') AS "imageUrls",
+        p."videoUrl",
+        u.name   AS "vendorName",
+        u.email  AS "vendorEmail",
+        vp."companyName",
+        vp.phone AS "vendorPhone"
       FROM products p
       JOIN "user" u ON u.id = p."vendorId"
       LEFT JOIN vendor_profiles vp ON vp."userId" = p."vendorId"
