@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Camera, ArrowRight } from "lucide-react";
+import { Sparkles, X, Camera, ArrowRight, Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/ui";
 import { FilterSidebar } from "./FilterSidebar";
@@ -151,6 +151,9 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
     if (fromCookie) setUserCity(fromCookie);
   }, []);
 
+  // Text search query from ?q= (set by hero search bar)
+  const textQuery = searchParams.get("q") ?? "";
+
   // Activate AI search if navigated here with ?aiIds= (from header modal)
   useEffect(() => {
     const aiIds = searchParams.get("aiIds");
@@ -182,7 +185,15 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
 
   // ── Computed: filtered products ──
   const filteredProducts = useMemo(() => {
+    const q = textQuery.trim().toLowerCase();
     return ALL_PRODUCTS.filter((p) => {
+      // Text search — match any field
+      if (q) {
+        const haystack = [p.name, p.materialType, p.color, p.finish, p.location, p.category, p.origin]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       if (
         filters.materialType.length > 0 &&
         !filters.materialType.includes(p.materialType)
@@ -211,7 +222,7 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
         return false;
       return true;
     });
-  }, [filters, ALL_PRODUCTS]);
+  }, [filters, ALL_PRODUCTS, textQuery]);
 
   // ── Computed: sorted products (with city boosting) ──
   const sortedProducts = useMemo(() => {
@@ -304,7 +315,7 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
             </p>
 
             {/* Quick actions */}
-            <div className="flex items-center gap-3 mt-5">
+            <div className="flex flex-wrap items-center gap-3 mt-5">
               <motion.button
                 onClick={() => setAiModalOpen(true)}
                 whileHover={{ scale: 1.03 }}
@@ -327,6 +338,19 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
                 >
                   Clear AI results
                 </motion.button>
+              )}
+              {textQuery && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-xs font-sans text-white/80"
+                >
+                  <Search size={12} className="text-amber-gold" />
+                  <span>Results for <strong className="text-white">&ldquo;{textQuery}&rdquo;</strong></span>
+                  <a href="/products" className="text-white/40 hover:text-white transition-colors ml-1">
+                    <X size={11} />
+                  </a>
+                </motion.div>
               )}
             </div>
           </motion.div>

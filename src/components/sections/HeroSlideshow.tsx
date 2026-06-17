@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Camera, ArrowRight, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const AIImageSearchModal = dynamic(
+  () => import("@/components/catalog/AIImageSearchModal").then((m) => ({ default: m.AIImageSearchModal })),
+  { ssr: false }
+);
 
 const GRAIN = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")";
 
@@ -498,75 +505,73 @@ const SLIDES: Slide[] = [
 // ── Search bar ────────────────────────────────────────────────────────────────
 
 function GlobalSearchBar() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-      setImagePreview(URL.createObjectURL(file));
-    },
-    [imagePreview]
-  );
+  const handleSearch = useCallback(() => {
+    const q = query.trim();
+    if (q) {
+      router.push(`/products?q=${encodeURIComponent(q)}`);
+    } else {
+      router.push("/products");
+    }
+  }, [query, router]);
 
-  const clearImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
-    if (fileRef.current) fileRef.current.value = "";
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.65, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="w-full max-w-xl"
-    >
-      <div
-        className="flex items-center rounded-2xl overflow-hidden"
-        style={{
-          background: "rgba(255,255,255,0.94)",
-          border: "1px solid rgba(185,185,200,0.50)",
-          borderLeft: "3px solid #c9a961",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.07)",
-        }}
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.65, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="w-full max-w-xl"
       >
-        <Search size={16} className="ml-4 text-gray-400 flex-shrink-0" />
-        <input
-          type="text"
-          placeholder="Search marble, granite, finish, city..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 px-3 py-3.5 text-gray-800 placeholder-gray-400 bg-transparent focus:outline-none font-sans text-sm"
-          autoComplete="off"
-        />
-        {imagePreview && (
-          <div className="relative flex-shrink-0 mr-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="" className="w-7 h-7 rounded-lg object-cover border border-gray-200" />
-            <button onClick={clearImage} className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gray-700 rounded-full flex items-center justify-center">
-              <X size={7} className="text-white" />
-            </button>
+        <div
+          className="flex items-center rounded-2xl overflow-hidden"
+          style={{
+            background: "rgba(255,255,255,0.94)",
+            border: "1px solid rgba(185,185,200,0.50)",
+            borderLeft: "3px solid #c9a961",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.07)",
+          }}
+        >
+          <Search size={16} className="ml-4 text-gray-400 flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Search marble, granite, finish, city..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 px-3 py-3.5 text-gray-800 placeholder-gray-400 bg-transparent focus:outline-none font-sans text-sm"
+            autoComplete="off"
+          />
+          <div className="flex items-center gap-1 pr-2 flex-shrink-0">
+            <motion.button
+              onClick={() => setAiModalOpen(true)}
+              className="p-2 rounded-xl hover:bg-amber-gold/10 transition-colors"
+              whileTap={{ scale: 0.95 }}
+              title="Search by photo"
+            >
+              <Camera size={15} className="text-amber-gold" />
+            </motion.button>
+            <motion.button
+              onClick={handleSearch}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="px-4 py-2 bg-gray-800 text-white font-sans text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mr-1"
+            >
+              Search
+            </motion.button>
           </div>
-        )}
-        <div className="flex items-center gap-1 pr-2 flex-shrink-0">
-          <input ref={fileRef} type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
-          <motion.button onClick={() => fileRef.current?.click()} className="p-2 rounded-xl hover:bg-amber-gold/10 transition-colors" whileTap={{ scale: 0.95 }} title="AI Image Search">
-            <Camera size={15} className="text-amber-gold" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="px-4 py-2 bg-gray-800 text-white font-sans text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors mr-1"
-          >
-            Search
-          </motion.button>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <AIImageSearchModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
+    </>
   );
 }
 
@@ -674,7 +679,7 @@ export function HeroSlideshow() {
 
             {/* CTAs */}
             <motion.div
-              className="flex items-center gap-3 mb-8"
+              className="flex items-center gap-3"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.48, duration: 0.55 }}
@@ -697,11 +702,13 @@ export function HeroSlideshow() {
                 {slide.secondaryCta}
               </motion.a>
             </motion.div>
-
-            {/* Search bar */}
-            <GlobalSearchBar />
           </motion.div>
         </AnimatePresence>
+
+        {/* Search bar lives OUTSIDE AnimatePresence so it never re-mounts on slide change */}
+        <div className="mt-8 w-full flex justify-center">
+          <GlobalSearchBar />
+        </div>
       </div>
 
       {/* Slide nav — right side vertical */}
