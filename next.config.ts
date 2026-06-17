@@ -2,8 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  compress: true,
+  poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400, // cache optimised images for 24 h
     remotePatterns: [
       {
         protocol: "https",
@@ -21,7 +24,6 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
-  // Increase serverless function timeout for first-time model load
   serverExternalPackages: ["@xenova/transformers", "onnxruntime-web"],
 };
 

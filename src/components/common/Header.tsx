@@ -10,7 +10,12 @@ import {
   User, Building2, ShieldCheck, LogIn, ArrowRight, Gem, Sparkles, Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AIImageSearchModal } from "@/components/catalog/AIImageSearchModal";
+import dynamic from "next/dynamic";
+
+const AIImageSearchModal = dynamic(
+  () => import("@/components/catalog/AIImageSearchModal").then((m) => ({ default: m.AIImageSearchModal })),
+  { ssr: false }
+);
 
 const CITIES = [
   { id: "mumbai",    name: "Mumbai",    region: "Maharashtra" },

@@ -9,7 +9,11 @@ import { FilterSidebar } from "./FilterSidebar";
 import { SortingHeader } from "./SortingHeader";
 import { CatalogProductCard } from "./CatalogProductCard";
 import { CatalogProductListItem } from "./CatalogProductListItem";
-import { AIImageSearchModal } from "./AIImageSearchModal";
+import dynamic from "next/dynamic";
+const AIImageSearchModal = dynamic(
+  () => import("./AIImageSearchModal").then((m) => ({ default: m.AIImageSearchModal })),
+  { ssr: false }
+);
 import { CATALOG_PRODUCTS } from "./data";
 import { EMPTY_FILTERS } from "./types";
 import type { CatalogProduct, FilterState, ViewMode, SortOption } from "./types";

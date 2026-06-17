@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import type { CatalogProduct, MaterialType, ProductUseCategory, ProductColor, StoneFinish, Thickness } from "@/components/catalog/types";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // ISR — rebuild catalog every 60 s
 
 export const metadata: Metadata = {
   title: "Stone Catalog — Stonamart",

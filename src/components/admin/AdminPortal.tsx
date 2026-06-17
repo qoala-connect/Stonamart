@@ -4,15 +4,23 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, FileText, ShieldCheck, BarChart3, Settings,
-  Package, ChevronRight, Bell, Search, Layers, LogOut, Gem, Radio,
+  Package, ChevronRight, Bell, Search, Layers, LogOut, Gem, Radio, Loader,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { signOutAction } from "@/lib/auth-actions";
 import { LeadPipeline } from "./crm/LeadPipeline";
 import { LeadDetailCard } from "./crm/LeadDetailCard";
-import { QuotationGenerator } from "./quotation/QuotationGenerator";
 import { VendorApprovalSection } from "./VendorApprovalSection";
 import { ProductReviewSection } from "./ProductReviewSection";
-import { ProductRequestBroadcast } from "./ProductRequestBroadcast";
+
+const QuotationGenerator = dynamic(
+  () => import("./quotation/QuotationGenerator").then((m) => ({ default: m.QuotationGenerator })),
+  { ssr: false, loading: () => <div className="flex-1 flex items-center justify-center"><Loader size={18} className="animate-spin text-amber-gold" /></div> }
+);
+const ProductRequestBroadcast = dynamic(
+  () => import("./ProductRequestBroadcast").then((m) => ({ default: m.ProductRequestBroadcast })),
+  { ssr: false, loading: () => <div className="flex-1 flex items-center justify-center"><Loader size={18} className="animate-spin text-amber-gold" /></div> }
+);
 import { MOCK_LEADS } from "./data";
 import type { Lead, LeadStage } from "./types";
 import type { VendorApplication, PendingProduct } from "@/lib/admin-actions";
