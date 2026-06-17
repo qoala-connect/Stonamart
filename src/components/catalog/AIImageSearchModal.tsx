@@ -160,24 +160,23 @@ export function AIImageSearchModal({ isOpen, onClose, onSearchComplete }: AIImag
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50"
-            onClick={modalState === "idle" ? onClose : undefined}
-          />
-
-          {/* Modal */}
+        /* Backdrop + flex centering wrapper */
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          onClick={modalState === "idle" ? onClose : undefined}
+        >
+          {/* Modal — stop propagation so clicks inside don't close */}
           <motion.div
             initial={{ opacity: 0, scale: 0.93, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl mx-auto px-4"
+            className="w-full max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-[#0f0f0f] rounded-3xl shadow-[0_32px_100px_rgba(0,0,0,0.7)] overflow-hidden max-h-[92vh] flex flex-col">
+            <div className="bg-[#0f0f0f] rounded-3xl shadow-[0_32px_100px_rgba(0,0,0,0.7)] overflow-hidden max-h-[88vh] flex flex-col">
 
               {/* ── Header ── */}
               <div className="relative flex items-center justify-between px-6 py-4 border-b border-white/8">
@@ -629,7 +628,7 @@ export function AIImageSearchModal({ isOpen, onClose, onSearchComplete }: AIImag
               </div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
