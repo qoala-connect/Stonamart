@@ -91,7 +91,7 @@ function FilterGroup({
                         >
                           <path
                             d="M1 4L3.5 6.5L9 1"
-                            stroke="#0a0a0a"
+                            stroke="#3a2f26"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"

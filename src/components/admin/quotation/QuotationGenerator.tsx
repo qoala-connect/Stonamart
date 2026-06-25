@@ -36,9 +36,9 @@ function StepIndicator({ current }: { current: number }) {
             <div className="flex flex-col items-center gap-1.5">
               <motion.div
                 animate={{
-                  backgroundColor: done ? "#c9a961" : active ? "#0a0a0a" : "transparent",
-                  borderColor: done || active ? (done ? "#c9a961" : "#0a0a0a") : "#0a0a0a22",
-                  color: done || active ? "#ffffff" : "#0a0a0a55",
+                  backgroundColor: done ? "#B8865A" : active ? "#3a2f26" : "transparent",
+                  borderColor: done || active ? (done ? "#B8865A" : "#3a2f26") : "#3a2f2622",
+                  color: done || active ? "#ffffff" : "#3a2f2655",
                 }}
                 transition={{ duration: 0.25 }}
                 className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] font-sans font-bold"
@@ -51,7 +51,7 @@ function StepIndicator({ current }: { current: number }) {
             </div>
             {i < STEPS.length - 1 && (
               <motion.div
-                animate={{ backgroundColor: done ? "#c9a961" : "#0a0a0a14" }}
+                animate={{ backgroundColor: done ? "#B8865A" : "#3a2f2614" }}
                 transition={{ duration: 0.3 }}
                 className="h-0.5 flex-1 mx-2 mb-4 min-w-[24px]"
               />
@@ -68,7 +68,7 @@ function Swatch({ bg, size = 10 }: { bg: string; size?: number }) {
   return (
     <div
       className="flex-shrink-0 rounded"
-      style={{ width: size, height: size, background: bg, border: "1px solid rgba(10,10,10,0.12)" }}
+      style={{ width: size, height: size, background: bg, border: "1px solid rgba(58,47,38,0.12)" }}
     />
   );
 }

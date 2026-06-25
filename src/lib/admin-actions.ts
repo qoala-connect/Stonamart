@@ -125,19 +125,36 @@ export type PendingProduct = {
   imageUrls: string[];
   videoUrl: string | null;
   createdAt: string;
+  status: string; // 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED'
 };
 
 export async function getPendingProducts(): Promise<PendingProduct[]> {
+  return getAdminProducts("pending");
+}
+
+// Returns all vendor-submitted products (non-DRAFT) for admin review queue.
+// filter: 'all' | 'pending' | 'approved' | 'rejected'
+export async function getAdminProducts(
+  filter: "all" | "pending" | "approved" | "rejected" = "all"
+): Promise<PendingProduct[]> {
   await requireAdmin();
   try {
-    // Ensure videoUrl column exists (idempotent — safe to run every time)
     await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "adminFeedback" TEXT DEFAULT NULL`).catch(() => {});
+
+    const statusMap = {
+      all:      `('PENDING_APPROVAL','APPROVED','REJECTED','CHANGES_REQUESTED')`,
+      pending:  `('PENDING_APPROVAL')`,
+      approved: `('APPROVED')`,
+      rejected: `('REJECTED','CHANGES_REQUESTED')`,
+    };
 
     const { rows } = await db.query(`
       SELECT
         p.id, p."vendorId", p.name, p."materialType", p.category,
         p.color, p.finish, p.thickness, p.dimensions,
         p."warehouseCity", p."pricePerUnit", p.unit, p."stockQty", p."createdAt",
+        p.status,
         COALESCE(p."imageUrls", '{}') AS "imageUrls",
         p."videoUrl",
         u.name   AS "vendorName",
@@ -147,7 +164,7 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
       FROM products p
       JOIN "user" u ON u.id = p."vendorId"
       LEFT JOIN vendor_profiles vp ON vp."userId" = p."vendorId"
-      WHERE p.status = 'PENDING_APPROVAL'
+      WHERE p.status IN ${statusMap[filter]}
       ORDER BY p."createdAt" DESC
     `);
     return rows;
@@ -202,11 +219,16 @@ export async function rejectProduct(
 ): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   try {
+    // Ensure adminFeedback column exists (idempotent)
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "adminFeedback" TEXT DEFAULT NULL`).catch(() => {});
+
     await db.query(
-      `UPDATE products SET status = 'REJECTED', "updatedAt" = NOW() WHERE id = $1`,
-      [productId]
+      `UPDATE products SET status = 'REJECTED', "adminFeedback" = $2, "updatedAt" = NOW() WHERE id = $1`,
+      [productId, reason]
     );
     revalidatePath("/admin/dashboard");
+    revalidatePath("/vendor/dashboard");
+
     // Notify vendor (best-effort)
     const { rows } = await db.query(
       `SELECT u.email, u.name FROM products p

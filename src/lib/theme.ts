@@ -1,18 +1,18 @@
 export const luxuryColors = {
   dark: {
-    base: '#0a0a0a',
-    950: '#1a1a1a',
-    900: '#111827',
+    base: '#2b231c',
+    950: '#3a2f26',
+    900: '#3a2f26',
   },
   light: {
-    base: '#f5f3f0',
-    cream50: '#faf9f7',
-    cream100: '#f3f1ee',
+    base: '#FBF7F1',
+    cream50: '#FDFBF8',
+    cream100: '#F6F0E6',
   },
   accent: {
-    champagneGold: '#c9a961',
-    bronze: '#8b7355',
-    amber: '#d4a574',
+    champagneGold: '#B8865A',
+    bronze: '#8B6F47',
+    amber: '#C9A06B',
   },
 };
 

@@ -72,7 +72,7 @@ function mapDbRow(r: Record<string, unknown>, similarity: number): ImageSearchRe
   };
 }
 
-/** Popular static products used as fallback when CLIP or pgvector isn't ready */
+/** Popular static products used as fallback when DB is empty */
 function staticFallback(exclude: Set<string>, limit: number): ImageSearchResult[] {
   return CATALOG_PRODUCTS
     .filter((p) => !exclude.has(p.id))
@@ -80,9 +80,110 @@ function staticFallback(exclude: Set<string>, limit: number): ImageSearchResult[
     .slice(0, limit)
     .map((p, i) => ({
       ...p,
-      matchScore: Math.max(20, 55 - i * 5),
+      matchScore: Math.max(5, 12 - i * 1),
       matchLabel: "Explore this",
     }));
+}
+
+// ── Free color analysis using sharp (no API key needed) ──────────────────────
+interface StoneAttrs {
+  materialType: string;
+  color:        string;
+  finish:       string;
+}
+
+async function analyzeImageColor(buffer: Buffer): Promise<StoneAttrs | null> {
+  try {
+    // Dynamic import so Next.js doesn't bundle sharp on the client
+    const sharp = (await import("sharp")).default;
+
+    // Resize to 20×20 for fast average-color computation
+    const { data, info } = await sharp(buffer)
+      .resize(20, 20, { fit: "fill" })
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    let rSum = 0, gSum = 0, bSum = 0;
+    let rSqSum = 0, gSqSum = 0, bSqSum = 0;
+    const pixelCount = info.width * info.height;
+    const channels   = info.channels;
+
+    for (let i = 0; i < data.length; i += channels) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      rSum += r; gSum += g; bSum += b;
+      rSqSum += r * r; gSqSum += g * g; bSqSum += b * b;
+    }
+
+    const avgR = rSum / pixelCount;
+    const avgG = gSum / pixelCount;
+    const avgB = bSum / pixelCount;
+    const brightness = (avgR + avgG + avgB) / 3;
+
+    // Variance across pixels → high variance = veined/patterned (marble-like)
+    const varR = rSqSum / pixelCount - avgR * avgR;
+    const varG = gSqSum / pixelCount - avgG * avgG;
+    const varB = bSqSum / pixelCount - avgB * avgB;
+    const variance = (varR + varG + varB) / 3;
+
+    // ── Map average RGB to stone color category ──────────────────────────────
+    let color: string;
+    if (brightness > 215) {
+      color = "white";
+    } else if (brightness > 185) {
+      color = avgR > avgB + 15 ? "cream" : "white";
+    } else if (brightness > 145) {
+      if (avgR > avgG + 20 && avgR > avgB + 30) color = "brown";
+      else if (avgG > avgR + 15 && avgG > avgB + 10) color = "green";
+      else if (avgB > avgR + 15) color = "blue";
+      else if (avgR > avgB + 12) color = "beige";
+      else color = "beige";
+    } else if (brightness > 90) {
+      if (avgR > avgB + 30) color = "brown";
+      else if (Math.abs(avgR - avgG) < 18 && Math.abs(avgG - avgB) < 18) color = "gray";
+      else if (avgG > avgR + 12) color = "green";
+      else color = "gray";
+    } else if (brightness > 40) {
+      color = "black";
+    } else {
+      color = "black";
+    }
+
+    // ── Heuristic material type from brightness + variance ───────────────────
+    let materialType: string;
+    if (brightness < 55) {
+      materialType = avgR > avgB + 5 ? "onyx" : "granite";
+    } else if (brightness < 100) {
+      materialType = variance > 500 ? "granite" : "granite";
+    } else if (brightness > 185 && variance > 300) {
+      materialType = "marble";  // light + high variance → veined marble
+    } else if (brightness > 185) {
+      materialType = "marble";
+    } else if (color === "brown" || color === "beige" || color === "cream") {
+      materialType = variance > 400 ? "limestone" : "sandstone";
+    } else if (variance > 600) {
+      materialType = "marble";
+    } else {
+      materialType = "quartz";
+    }
+
+    return { materialType, color, finish: "polished" };
+  } catch {
+    return null;
+  }
+}
+
+// Score how well a DB row matches detected attrs (0–100)
+function attributeScore(r: Record<string, unknown>, attrs: StoneAttrs): number {
+  let score = 0;
+  const mat    = (r.materialType as string)?.toLowerCase() ?? "";
+  const color  = (r.color       as string)?.toLowerCase() ?? "";
+  const finish = (r.finish      as string)?.toLowerCase() ?? "";
+
+  if (mat   === attrs.materialType.toLowerCase()) score += 55;
+  if (color === attrs.color.toLowerCase())        score += 35;
+  if (finish === attrs.finish.toLowerCase())      score += 10;
+  return score;
 }
 
 export async function POST(request: NextRequest) {
@@ -95,17 +196,20 @@ export async function POST(request: NextRequest) {
   const buffer   = Buffer.from(await imageFile.arrayBuffer());
   const mimeType = imageFile.type || "image/jpeg";
 
-  // ── 1. Try CLIP embedding (may fail on first load while model downloads) ────
-  let vecLiteral: string | null = null;
-  try {
-    const { embedImageBuffer, toVectorLiteral } = await import("@/lib/clip");
-    const embedding = await embedImageBuffer(buffer, mimeType);
-    vecLiteral = toVectorLiteral(embedding);
-  } catch {
-    // Model not ready yet — will use fallback below
-  }
+  // ── 1. Free color analysis + optional CLIP (in parallel) ─────────────────────
+  const [colorResult, vecLiteralResult] = await Promise.allSettled([
+    analyzeImageColor(buffer),
+    (async () => {
+      const { embedImageBuffer, toVectorLiteral } = await import("@/lib/clip");
+      const embedding = await embedImageBuffer(buffer, mimeType);
+      return toVectorLiteral(embedding);
+    })(),
+  ]);
 
-  // ── 2. Vector similarity search in DB ────────────────────────────────────────
+  const attrs:      StoneAttrs | null = colorResult.status === "fulfilled" ? colorResult.value : null;
+  const vecLiteral: string    | null  = vecLiteralResult.status === "fulfilled" ? vecLiteralResult.value : null;
+
+  // ── 2. Vector similarity search (CLIP pgvector) ───────────────────────────────
   let dbResults: ImageSearchResult[] = [];
   if (vecLiteral) {
     try {
@@ -120,16 +224,57 @@ export async function POST(request: NextRequest) {
          LIMIT 8`,
         [vecLiteral]
       );
-      dbResults = rows.map((r) => mapDbRow(r, Number(r.similarity ?? 0.5)));
+      dbResults = rows.map((r) => {
+        const clipScore = Number(r.similarity ?? 0.5);
+        // Blend CLIP score with attribute score when color analysis succeeded
+        const finalScore = attrs
+          ? Math.min(100, Math.round(clipScore * 40) + attributeScore(r, attrs) * 0.6)
+          : Math.max(0, Math.min(100, Math.round(clipScore * 100)));
+        return mapDbRow(r, finalScore / 100);
+      });
     } catch {
-      // pgvector not enabled yet — fall through to static fallback
+      // pgvector not enabled — fall through
     }
   }
 
-  // ── 3. DB products without embeddings (recent approved, no vector search) ────
-  let dbNoEmbed: ImageSearchResult[] = [];
-  if (dbResults.length < 4) {
+  // ── 3. Attribute-matched DB products (color analysis path) ───────────────────
+  let attrResults: ImageSearchResult[] = [];
+  if (attrs) {
     try {
+      const existingIds = new Set(dbResults.map((p) => p.id));
+      const { rows } = await db.query<Record<string, unknown>>(
+        `SELECT id, name, "materialType", category, color, finish, thickness,
+                "warehouseCity", "pricePerUnit", unit, "stockQty", "isOutOfStock",
+                views, "createdAt", "imageUrls"
+         FROM products
+         WHERE status = 'APPROVED'
+           AND (
+             LOWER("materialType") = LOWER($1)
+             OR LOWER(color)       = LOWER($2)
+           )
+         ORDER BY views DESC
+         LIMIT 20`,
+        [attrs.materialType, attrs.color]
+      );
+      attrResults = rows
+        .filter((r) => !existingIds.has(r.id as string))
+        .map((r)  => mapDbRow(r, attributeScore(r, attrs) / 100))
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 8 - dbResults.length);
+    } catch {
+      // DB unavailable
+    }
+  }
+
+  // ── 4. Popular fallback for remaining slots ───────────────────────────────────
+  let dbNoEmbed: ImageSearchResult[] = [];
+  const primaryCount = dbResults.length + attrResults.length;
+  if (primaryCount < 4) {
+    try {
+      const existingIds = new Set([
+        ...dbResults.map((p) => p.id),
+        ...attrResults.map((p) => p.id),
+      ]);
       const { rows } = await db.query<Record<string, unknown>>(
         `SELECT id, name, "materialType", category, color, finish, thickness,
                 "warehouseCity", "pricePerUnit", unit, "stockQty", "isOutOfStock",
@@ -139,39 +284,43 @@ export async function POST(request: NextRequest) {
          ORDER BY views DESC, "createdAt" DESC
          LIMIT 12`
       );
-      const existingIds = new Set(dbResults.map((p) => p.id));
       dbNoEmbed = rows
         .filter((r) => !existingIds.has(r.id as string))
-        .map((r, i) => mapDbRow(r, 0.45 - i * 0.02))
-        .slice(0, 8 - dbResults.length);
+        // Cap fallback scores at 18 so they never outrank real color/CLIP matches
+        .map((r, i) => mapDbRow(r, Math.max(0.05, 0.18 - i * 0.01)))
+        .slice(0, 8 - primaryCount);
     } catch {
       // DB unavailable
     }
   }
 
-  // ── 4. Merge: vector results → DB popular → static catalog ──────────────────
-  const seen    = new Set<string>();
+  // ── 5. Merge, sort by matchScore, fill static fallback ───────────────────────
+  const seen   = new Set<string>();
   const merged: ImageSearchResult[] = [];
 
-  for (const p of [...dbResults, ...dbNoEmbed]) {
+  for (const p of [...dbResults, ...attrResults, ...dbNoEmbed]) {
     if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
   }
-
-  // Fill up to 8 with static products
   for (const p of staticFallback(seen, 8 - merged.length)) {
     if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
   }
 
-  const top = merged.slice(0, 8);
-  const topMat = top[0]?.materialType ?? "stone";
+  // Best match always first
+  merged.sort((a, b) => b.matchScore - a.matchScore);
+
+  const top    = merged.slice(0, 8);
+  const topMat = attrs?.materialType ?? top[0]?.materialType ?? "stone";
+  const topColor = attrs?.color ?? top[0]?.color ?? "";
 
   return NextResponse.json({
     products:   top,
     attributes: {
       materialType: topMat,
-      color:        top[0]?.color  ?? "",
-      finish:       top[0]?.finish ?? "",
-      description:  vecLiteral ? "Visually similar stones" : "Popular stones",
+      color:        topColor,
+      finish:       attrs?.finish ?? top[0]?.finish ?? "",
+      description:  attrs
+        ? `${topMat.charAt(0).toUpperCase() + topMat.slice(1)} · ${topColor}`
+        : vecLiteral ? "Visually similar stones" : "Popular stones",
     } satisfies ImageSearchAttributes,
   });
 }

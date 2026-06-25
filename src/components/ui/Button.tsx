@@ -3,17 +3,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed",
+  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed",
   {
     variants: {
       variant: {
         luxury:
-          "bg-amber-gold text-stone-950 hover:bg-amber-gold/90 shadow-luxury hover:shadow-luxury-lg",
+          "bg-amber-gold text-white hover:bg-[#A6754A] shadow-luxury hover:shadow-luxury-lg",
         outline:
-          "border border-stone-dark/20 text-stone-dark hover:bg-stone-dark/5 hover:border-stone-dark/40",
+          "border border-stone-dark/20 text-stone-dark bg-white hover:bg-stone-dark/5 hover:border-stone-dark/30",
         ghost: "text-stone-dark hover:bg-stone-dark/5",
         secondary:
-          "bg-bronze-accent text-stone-light hover:bg-bronze-accent/90",
+          "bg-bronze-accent text-white hover:bg-bronze-accent/90",
       },
       size: {
         sm: "px-4 py-2 text-sm",

@@ -4,7 +4,9 @@ import { PremiumHomePage } from "@/components/sections/PremiumHomePage";
 export default function Home() {
   return (
     <MainLayout>
-      <PremiumHomePage />
+      <div className="bg-[#FBF7F1]">
+        <PremiumHomePage />
+      </div>
     </MainLayout>
   );
 }

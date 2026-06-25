@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -30,11 +28,14 @@
   h4,
   h5,
   h6 {
-    @apply font-serif font-semibold tracking-tight;
+    font-family: var(--font-playfair, "Playfair Display"), serif;
+    @apply font-semibold tracking-tight;
   }
 
-  p {
-    @apply font-sans;
+  p,
+  body,
+  .font-sans {
+    font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial);
   }
 }
 
@@ -44,15 +45,15 @@
   }
 
   .btn-luxury {
-    @apply px-6 py-3 bg-amber-gold text-stone-950 font-medium hover:bg-amber-gold/90 transition-colors duration-300 rounded-lg shadow-luxury;
+    @apply px-6 py-3 bg-amber-gold text-white font-medium hover:bg-amber-gold/90 transition-colors duration-300 rounded-full shadow-luxury;
   }
 
   .btn-outline {
-    @apply px-6 py-3 border border-stone-dark/20 text-stone-dark hover:bg-stone-dark/5 transition-colors duration-300 rounded-lg;
+    @apply px-6 py-3 border border-stone-dark/15 text-stone-dark hover:bg-stone-dark/5 transition-colors duration-300 rounded-full;
   }
 
   .card-luxury {
-    @apply bg-cream-100 border border-stone-dark/10 rounded-lg p-6 hover:shadow-luxury-lg transition-shadow duration-300;
+    @apply bg-white border border-stone-dark/10 rounded-2xl p-6 hover:shadow-luxury-lg transition-shadow duration-300;
   }
 
   .text-gradient-luxury {
@@ -76,10 +77,10 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(10, 10, 10, 0.2);
+  background: rgba(58, 47, 38, 0.18);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(10, 10, 10, 0.4);
+  background: rgba(58, 47, 38, 0.35);
 }

@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useTransition } from "react";
+import React, { useState, useCallback, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Plus, BadgeCheck, MapPin, LogOut,
-  X, ChevronLeft, ChevronRight, Play, Video, Edit3, ImageIcon,
+  LayoutDashboard, Plus, Clock, CheckCircle2, XCircle,
+  Layers, Package, User, Settings, AlertTriangle,
+  Eye, TrendingUp,
 } from "lucide-react";
-import { Container } from "@/components/ui";
-import { signOutAction } from "@/lib/auth-actions";
+import { DashboardShell, type NavItem } from "@/components/dashboard/DashboardShell";
 import { KPICards } from "./KPICards";
 import { ListingsTable } from "./ListingsTable";
 import { ProductSubmissionForm } from "./ProductSubmissionForm";
 import { BG_FOR_MATERIAL } from "./data";
-import { submitProduct, updateProduct, uploadProductImages, createVideoUploadUrl } from "@/lib/vendor-actions";
+import { submitProduct, updateProduct, deleteProduct } from "@/lib/vendor-actions";
 import type {
   VendorListing,
   ListingStatus,
@@ -22,663 +22,421 @@ import type {
 } from "./types";
 import type { VendorProfileData } from "@/lib/vendor-actions";
 
-type Tab = "overview" | "submit";
+type NavId =
+  | "overview"
+  | "add"
+  | "all"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "profile"
+  | "settings";
 
-// ─── Tab bar ───────────────────────────────────────────────────────────────────
-function TabBar({
-  active,
-  onChange,
-  pendingCount,
-}: {
-  active: Tab;
-  onChange: (t: Tab) => void;
-  pendingCount: number;
-}) {
-  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "submit", label: "Add New Listing", icon: Plus },
-  ];
-
-  return (
-    <div className="flex items-center gap-1 border-b border-gray-200 mb-8">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = active === tab.id;
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onChange(tab.id)}
-            className="relative flex items-center gap-2 px-4 py-3.5 text-sm font-sans font-semibold transition-colors duration-200 focus:outline-none"
-          >
-            <Icon
-              size={14}
-              className={isActive ? "text-amber-gold" : "text-gray-400"}
-            />
-            <span className={isActive ? "text-gray-900" : "text-gray-400"}>
-              {tab.label}
-            </span>
-            {tab.id === "overview" && pendingCount > 0 && (
-              <span className="flex items-center justify-center w-4 h-4 bg-amber-500 text-white text-[9px] font-bold rounded-full">
-                {pendingCount}
-              </span>
-            )}
-            {isActive && (
-              <motion.div
-                layoutId="tabUnderline"
-                className="absolute bottom-0 inset-x-0 h-0.5 bg-amber-gold rounded-t-full"
-                transition={{ type: "spring", stiffness: 380, damping: 32 }}
-              />
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Status config (mirrors ListingsTable) ────────────────────────────────────
-const STATUS_CFG: Record<
-  ListingStatus,
-  { label: string; bg: string; text: string; border: string; dot: string }
-> = {
-  DRAFT:             { label: "Draft",             bg: "bg-stone-100",      text: "text-stone-500",    border: "border-stone-200",    dot: "bg-stone-400"  },
-  PENDING_APPROVAL:  { label: "Pending Review",    bg: "bg-amber-50",       text: "text-amber-700",    border: "border-amber-200",    dot: "bg-amber-500"  },
-  CHANGES_REQUESTED: { label: "Changes Requested", bg: "bg-orange-50",      text: "text-orange-700",   border: "border-orange-200",   dot: "bg-orange-500" },
-  APPROVED:          { label: "Approved",          bg: "bg-emerald-50",     text: "text-emerald-700",  border: "border-emerald-200",  dot: "bg-emerald-500"},
-  REJECTED:          { label: "Rejected",          bg: "bg-red-50",         text: "text-red-700",      border: "border-red-200",      dot: "bg-red-500"    },
-  INACTIVE:          { label: "Inactive",          bg: "bg-slate-50",       text: "text-slate-500",    border: "border-slate-200",    dot: "bg-slate-400"  },
+const PAGE_META: Record<NavId, { title: string; subtitle: string }> = {
+  overview:  { title: "Dashboard",            subtitle: "Your products at a glance"                          },
+  add:       { title: "Add New Product",      subtitle: "Submit a new stone listing for admin review"       },
+  all:       { title: "My Products",          subtitle: "All your product listings"                          },
+  pending:   { title: "Pending Reviews",      subtitle: "Products waiting for admin approval"                },
+  approved:  { title: "Approved Products",    subtitle: "Products live on the marketplace"                   },
+  rejected:  { title: "Rejected Products",    subtitle: "Products that need changes before resubmission"     },
+  profile:   { title: "Vendor Profile",       subtitle: "Your business information"                          },
+  settings:  { title: "Settings",             subtitle: "Account preferences"                                },
 };
 
-// ─── Vendor product detail modal ───────────────────────────────────────────────
-function VendorProductDetailModal({
-  listing,
-  onClose,
-  onEdit,
-}: {
-  listing: VendorListing;
-  onClose: () => void;
-  onEdit: () => void;
-}) {
-  const [imgIdx, setImgIdx] = useState(0);
-  const [showVideo, setShowVideo] = useState(false);
-
-  const images = listing.imageUrls ?? [];
-  const hasVideo = !!listing.videoUrl;
-  const sc = STATUS_CFG[listing.status];
-
-  const prevImg = () => setImgIdx((i) => (i - 1 + images.length) % images.length);
-  const nextImg = () => setImgIdx((i) => (i + 1) % images.length);
-
-  const SPECS = [
-    { label: "Material",   value: listing.materialType },
-    { label: "Category",   value: listing.category },
-    { label: "Color",      value: listing.color },
-    { label: "Finish",     value: listing.finish },
-    { label: "Thickness",  value: listing.thickness },
-    { label: "Dimensions", value: listing.dimensions },
-    { label: "Warehouse",  value: listing.warehouseCity },
-    { label: "Views",      value: listing.views.toLocaleString() },
+// ─── Profile card ──────────────────────────────────────────────────────────────
+function VendorProfileCard({ profile }: { profile: VendorProfileData | null }) {
+  if (!profile) {
+    return (
+      <div className="p-8 flex flex-col items-center text-stone-400">
+        <User size={32} strokeWidth={1} className="mb-3" />
+        <p className="font-sans text-sm">No profile found</p>
+      </div>
+    );
+  }
+  const rows = [
+    { label: "Company Name",    value: profile.companyName     },
+    { label: "Contact Person",  value: profile.contactPerson   },
+    { label: "Phone",           value: profile.phone           },
+    { label: "City",            value: profile.city            },
   ];
-
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div className="min-h-full flex items-start justify-center px-4 pt-24 pb-10">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 10 }}
-          transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-            <div>
-              <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.16em] text-amber-gold mb-1">
-                Product Details
-              </p>
-              <h2 className="font-serif text-xl font-bold text-gray-900 leading-tight">
-                {listing.name}
-              </h2>
-              <p className="font-sans text-xs text-gray-400 mt-0.5 capitalize">
-                {listing.materialType} · {listing.category}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-sans font-semibold whitespace-nowrap ${sc.bg} ${sc.text} ${sc.border}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                {sc.label}
-              </span>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
+    <div className="p-8 max-w-xl">
+      <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-stone-100 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+            <span className="font-serif text-2xl font-bold text-blue-500">
+              {profile.companyName[0]?.toUpperCase()}
+            </span>
           </div>
-
-          {/* Body — two-column on md+ */}
-          <div className="flex flex-col md:flex-row">
-            {/* Left: image gallery */}
-            <div className="p-5 md:w-[52%] flex-shrink-0">
-              {/* Main image / video */}
-              {showVideo && hasVideo ? (
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-900">
-                  <video
-                    src={listing.videoUrl!}
-                    controls
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              ) : images.length > 0 ? (
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[imgIdx]}
-                    alt={listing.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {images.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevImg}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors"
-                      >
-                        <ChevronLeft size={14} className="text-gray-600" />
-                      </button>
-                      <button
-                        onClick={nextImg}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors"
-                      >
-                        <ChevronRight size={14} className="text-gray-600" />
-                      </button>
-                      <span className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 text-white text-[10px] font-sans rounded-full">
-                        {imgIdx + 1} / {images.length}
-                      </span>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="aspect-[4/3] rounded-2xl bg-gray-50 flex flex-col items-center justify-center gap-2 text-gray-300">
-                  <ImageIcon size={36} strokeWidth={1} />
-                  <p className="text-xs font-sans">No images uploaded</p>
-                </div>
-              )}
-
-              {/* Thumbnails + video thumb */}
-              {(images.length > 1 || hasVideo) && (
-                <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-                  {images.map((url, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setImgIdx(i); setShowVideo(false); }}
-                      className={`flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${
-                        i === imgIdx && !showVideo
-                          ? "border-amber-gold shadow-sm"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                  {hasVideo && (
-                    <button
-                      onClick={() => setShowVideo(true)}
-                      className={`flex-shrink-0 w-12 h-12 rounded-xl border-2 transition-all flex items-center justify-center bg-gray-800 ${
-                        showVideo ? "border-amber-gold" : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <Play size={16} className="text-white" fill="white" />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Media summary */}
-              <div className="mt-3 flex items-center gap-3 text-[11px] font-sans text-gray-400">
-                {images.length > 0 && (
-                  <span>{images.length} photo{images.length !== 1 ? "s" : ""}</span>
-                )}
-                {hasVideo && (
-                  <span className="flex items-center gap-1 text-purple-500">
-                    <Video size={11} /> Video attached
-                  </span>
-                )}
-                {images.length === 0 && !hasVideo && (
-                  <span>No media uploaded</span>
-                )}
-              </div>
-            </div>
-
-            {/* Right: info */}
-            <div className="flex-1 p-5 md:border-l border-gray-100">
-              {/* Price block */}
-              <div className="mb-5 p-4 bg-amber-gold/5 rounded-2xl border border-amber-gold/15">
-                <p className="text-[9px] font-sans font-semibold uppercase tracking-[0.14em] text-amber-gold/80 mb-1">
-                  Your Price
-                </p>
-                <p className="font-serif text-2xl font-bold text-gray-900">
-                  ₹{listing.pricePerUnit.toLocaleString()}
-                  <span className="font-sans text-sm font-normal text-gray-400 ml-1.5">
-                    / {listing.unit}
-                  </span>
-                </p>
-                <p
-                  className={`text-xs font-sans font-semibold mt-2 ${
-                    listing.isOutOfStock ? "text-red-500" : "text-emerald-600"
-                  }`}
-                >
-                  {listing.isOutOfStock
-                    ? "Out of Stock"
-                    : `${listing.stockQty.toLocaleString()} units in stock`}
-                </p>
-              </div>
-
-              {/* Spec grid */}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3.5">
-                {SPECS.map(({ label, value }) =>
-                  value ? (
-                    <div key={label}>
-                      <p className="text-[9px] font-sans font-semibold uppercase tracking-[0.12em] text-gray-400 mb-0.5">
-                        {label}
-                      </p>
-                      <p className="font-sans text-sm font-medium text-gray-800 capitalize leading-snug">
-                        {value}
-                      </p>
-                    </div>
-                  ) : null
-                )}
-              </div>
-            </div>
+          <div>
+            <h3 className="font-serif text-xl font-bold text-stone-900">{profile.companyName}</h3>
+            <p className="font-sans text-xs text-stone-400 mt-0.5">{profile.city}, India</p>
           </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/60">
-            <p className="text-[11px] font-sans text-gray-400">
-              Listed {new Date(listing.createdAt * 1000).toLocaleDateString("en-IN", {
-                day: "numeric", month: "short", year: "numeric",
-              })}
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-sans font-semibold text-gray-500 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100"
-              >
-                Close
-              </button>
-              <motion.button
-                onClick={() => { onClose(); onEdit(); }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-5 py-2 bg-amber-gold text-white font-sans font-semibold text-sm rounded-xl hover:bg-amber-gold/90 transition-colors shadow-sm"
-              >
-                <Edit3 size={14} />
-                Edit Listing
-              </motion.button>
+        </div>
+        <div className="px-6 py-2 divide-y divide-stone-100">
+          {rows.map(({ label, value }) => (
+            <div key={label} className="flex justify-between items-center py-3.5">
+              <span className="font-sans text-[12px] text-stone-400">{label}</span>
+              <span className="font-sans text-[13.5px] font-semibold text-stone-800">{value}</span>
             </div>
-          </div>
-        </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Main vendor portal ────────────────────────────────────────────────────────
+// ─── Overview dashboard ────────────────────────────────────────────────────────
+function OverviewContent({
+  listings,
+  onNavigate,
+}: {
+  listings: VendorListing[];
+  onNavigate: (id: NavId) => void;
+}) {
+  const pending  = listings.filter((l) => l.status === "PENDING_APPROVAL").length;
+  const approved = listings.filter((l) => l.status === "APPROVED").length;
+  const rejected = listings.filter((l) => l.status === "REJECTED" || l.status === "CHANGES_REQUESTED").length;
+  const views    = listings.reduce((s, l) => s + l.views, 0);
+
+  const quickStats = [
+    { label: "Pending Review", value: pending,  icon: Clock,         color: "bg-amber-50 border-amber-100 text-amber-600", navId: "pending"  as NavId },
+    { label: "Approved",       value: approved, icon: CheckCircle2,  color: "bg-emerald-50 border-emerald-100 text-emerald-600", navId: "approved" as NavId },
+    { label: "Rejected",       value: rejected, icon: XCircle,       color: "bg-red-50 border-red-100 text-red-500",       navId: "rejected" as NavId },
+    { label: "Total Views",    value: views,    icon: Eye,           color: "bg-blue-50 border-blue-100 text-blue-500",    navId: "all"      as NavId },
+  ];
+
+  return (
+    <div className="p-6 space-y-6">
+      <KPICards listings={listings} />
+
+      {/* Quick-nav status cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {quickStats.map(({ label, value, icon: Icon, color, navId }) => (
+          <button
+            key={label}
+            onClick={() => onNavigate(navId)}
+            className={`group text-left p-4 rounded-2xl border ${color} hover:shadow-md transition-all duration-200 bg-white/80`}
+          >
+            <div className={`w-9 h-9 rounded-xl border ${color} flex items-center justify-center mb-3`}>
+              <Icon size={16} />
+            </div>
+            <p className="font-serif text-2xl font-bold text-stone-900 leading-none">{value}</p>
+            <p className="font-sans text-[12px] text-stone-500 mt-1">{label}</p>
+            <p className="font-sans text-[10.5px] text-stone-400 mt-0.5 group-hover:translate-x-0.5 transition-transform">
+              View all →
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Recent listings */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-sans text-[13px] font-bold text-stone-700 uppercase tracking-wider">
+            Recent Products
+          </h3>
+          <button
+            onClick={() => onNavigate("all")}
+            className="font-sans text-[12px] text-amber-600 hover:text-amber-700"
+          >
+            View all →
+          </button>
+        </div>
+        <ListingsTable listings={listings.slice(0, 6)} onToggleOOS={() => {}} onEditListing={() => {}} onDeleteListing={() => {}} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Settings placeholder ──────────────────────────────────────────────────────
+function SettingsPlaceholder() {
+  return (
+    <div className="p-8 flex flex-col items-center justify-center min-h-[320px] text-stone-300">
+      <Settings size={40} strokeWidth={1} className="mb-3" />
+      <p className="font-sans text-sm text-stone-400">Settings — coming soon</p>
+    </div>
+  );
+}
+
+// ─── Main VendorPortal ─────────────────────────────────────────────────────────
 export function VendorPortal({
   vendorProfile,
   initialListings = [],
+  vendorUser,
 }: {
   vendorProfile: VendorProfileData | null;
   initialListings?: VendorListing[];
+  vendorUser: { name: string; email: string };
 }) {
-  const [listings, setListings] = useState<VendorListing[]>(initialListings);
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [editData, setEditData] = useState<{
-    step1: FormStep1;
-    step2: FormStep2;
-  } | null>(null);
-  // useRef so handleFormSubmit ([] deps) always reads the fresh value
-  const editIdRef = useRef<string | null>(null);
-  const [detailListingId, setDetailListingId] = useState<string | null>(null);
+  const [listings, setListings]       = useState<VendorListing[]>(initialListings);
+  const [activeNav, setActiveNav]     = useState<NavId>("overview");
+  const [editData, setEditData]       = useState<{ step1: FormStep1; step2: FormStep2 } | null>(null);
+  const [editingId, setEditingId]     = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
-
-  const detailListing = detailListingId
-    ? listings.find((l) => l.id === detailListingId) ?? null
-    : null;
+  const [, startTransition]           = useTransition();
 
   const companyName = vendorProfile?.companyName ?? "My Store";
-  const city = vendorProfile?.city ?? "";
+
+  const pendingCount   = listings.filter((l) => l.status === "PENDING_APPROVAL" || l.status === "CHANGES_REQUESTED").length;
+  const approvedCount  = listings.filter((l) => l.status === "APPROVED").length;
+  const rejectedCount  = listings.filter((l) => l.status === "REJECTED" || l.status === "CHANGES_REQUESTED").length;
+
+  // ── Build nav items ──
+  const navItems: NavItem[] = [
+    { id: "overview",  label: "Dashboard",        icon: LayoutDashboard  },
+    { id: "add",       label: "Add Product",       icon: Plus             },
+    { id: "all",       label: "My Products",       icon: Layers,  badge: listings.length },
+    { id: "pending",   label: "Pending Reviews",   icon: Clock,   badge: pendingCount    },
+    { id: "approved",  label: "Approved Products", icon: CheckCircle2, badge: approvedCount   },
+    { id: "rejected",  label: "Rejected Products", icon: XCircle, badge: rejectedCount   },
+    { id: "profile",   label: "Profile",           icon: User,    group: "Account"       },
+    { id: "settings",  label: "Settings",          icon: Settings, group: "Account", disabled: true },
+  ];
 
   // ── OOS toggle ──
   const handleToggleOOS = useCallback((id: string) => {
-    setListings((prev) =>
-      prev.map((l) =>
-        l.id === id ? { ...l, isOutOfStock: !l.isOutOfStock } : l
-      )
-    );
+    setListings((prev) => prev.map((l) => l.id === id ? { ...l, isOutOfStock: !l.isOutOfStock } : l));
   }, []);
 
-  // ── Open edit for an existing listing ──
-  const handleEditListing = useCallback(
-    (id: string) => {
-      const listing = listings.find((l) => l.id === id);
-      if (!listing) return;
-      editIdRef.current = id;
-      setEditData({
-        step1: {
-          name: listing.name,
-          materialType: listing.materialType,
-          category: listing.category,
-          stockQty: String(listing.stockQty),
-          pricePerUnit: String(listing.pricePerUnit),
-          unit: listing.unit,
-        },
-        step2: {
-          color: listing.color,
-          finish: listing.finish,
-          thickness: listing.thickness,
-          dimensions: listing.dimensions,
-          warehouseCity: listing.warehouseCity,
-        },
-      });
-      setActiveTab("submit");
-    },
-    [listings]
-  );
+  // ── Edit ──
+  const handleEditListing = useCallback((id: string) => {
+    const listing = listings.find((l) => l.id === id);
+    if (!listing) return;
+    setEditingId(id);
+    setEditData({
+      step1: {
+        name: listing.name, materialType: listing.materialType,
+        category: listing.category, stockQty: String(listing.stockQty),
+        pricePerUnit: String(listing.pricePerUnit), unit: listing.unit,
+      },
+      step2: {
+        color: listing.color, finish: listing.finish, thickness: listing.thickness,
+        dimensions: listing.dimensions, warehouseCity: listing.warehouseCity,
+      },
+    });
+    setActiveNav("add");
+  }, [listings]);
 
-  // ── Submit / save to DB ──
+  // ── Delete ──
+  const handleDeleteListing = useCallback((id: string) => {
+    const listing = listings.find((l) => l.id === id);
+    if (!listing) return;
+    setListings((prev) => prev.filter((l) => l.id !== id));
+    startTransition(async () => {
+      const result = await deleteProduct(id);
+      if (!result.ok) {
+        setListings((prev) => [listing, ...prev]);
+        setSubmitError(result.error ?? "Failed to delete listing.");
+      }
+    });
+  }, [listings]);
+
+  // ── Submit / Save ──
   const handleFormSubmit = useCallback(
-    (
-      action: "draft" | "review",
-      data: { step1: FormStep1; step2: FormStep2; step3: FormStep3 }
-    ) => {
+    (action: "draft" | "review", data: { step1: FormStep1; step2: FormStep2; step3: FormStep3 }) => {
       const { step1, step2 } = data;
       const mat = BG_FOR_MATERIAL[step1.materialType] ?? BG_FOR_MATERIAL.other;
-      const currentEditId = editIdRef.current; // capture before clearing
+      const targetId = editingId;
+      const newStatus = (action === "draft" ? "DRAFT" : "PENDING_APPROVAL") as ListingStatus;
       setSubmitError(null);
-      setEditData(null);
-      editIdRef.current = null;
+
+      const imageUrls = (data.step3.uploadedUrls ?? [])
+        .slice(0, 6)
+        .filter((u): u is string => typeof u === "string" && u.length > 0);
+      const videoUrl = (data.step3.uploadedUrls?.[6] as string | null | undefined) ?? null;
 
       const updatedFields: Partial<VendorListing> = {
-        name: step1.name,
-        materialType: step1.materialType,
-        category: step1.category,
-        color: step2.color,
-        finish: step2.finish,
-        thickness: step2.thickness,
-        dimensions: step2.dimensions,
-        warehouseCity: step2.warehouseCity,
-        pricePerUnit: parseFloat(step1.pricePerUnit) || 0,
-        unit: step1.unit,
-        stockQty: parseInt(step1.stockQty) || 0,
-        status: (action === "draft" ? "DRAFT" : "PENDING_APPROVAL") as ListingStatus,
-        bg: mat.bg,
-        textLight: mat.textLight,
+        name: step1.name, materialType: step1.materialType, category: step1.category,
+        color: step2.color, finish: step2.finish, thickness: step2.thickness,
+        dimensions: step2.dimensions, warehouseCity: step2.warehouseCity,
+        pricePerUnit: parseFloat(step1.pricePerUnit) || 0, unit: step1.unit,
+        stockQty: parseInt(step1.stockQty) || 0, status: newStatus,
+        adminFeedback: undefined, bg: mat.bg, textLight: mat.textLight,
       };
 
-      if (currentEditId) {
-        // ── UPDATE: patch the existing row in-place ──
-        setListings((prev) =>
-          prev.map((l) => (l.id === currentEditId ? { ...l, ...updatedFields } : l))
-        );
-      } else {
-        // ── INSERT: optimistically prepend a new row ──
-        const tempId = `tmp-${Date.now()}`;
-        const newListing: VendorListing = {
-          id: tempId,
-          isOutOfStock: false,
-          views: 0,
-          createdAt: Math.floor(Date.now() / 1000),
-          ...updatedFields,
-        } as VendorListing;
-        setListings((prev) => [newListing, ...prev]);
-
+      if (targetId) {
+        const originalListing = listings.find((l) => l.id === targetId);
+        setListings((prev) => prev.map((l) => (l.id === targetId ? { ...l, ...updatedFields } : l)));
         startTransition(async () => {
-          const { imageUrls, videoUrl } = await uploadMedia(data);
-          const result = await submitProduct({
-            ...updatedFields as Parameters<typeof submitProduct>[0],
-            imageUrls,
-            videoUrl,
-          });
-          if (result.ok && result.id) {
-            setListings((prev) =>
-              prev.map((l) => (l.id === tempId ? { ...l, id: result.id! } : l))
-            );
-          } else if (!result.ok) {
-            setSubmitError(result.error ?? "Failed to save listing.");
-          }
-        });
-      }
-
-      setTimeout(() => setActiveTab("overview"), 2500);
-
-      if (currentEditId) {
-        // Persist the update in background
-        startTransition(async () => {
-          const { imageUrls, videoUrl } = await uploadMedia(data);
-          const result = await updateProduct({
-            id: currentEditId,
-            ...updatedFields as Parameters<typeof submitProduct>[0],
-            imageUrls,
-            videoUrl,
+          const result = await updateProduct(targetId, {
+            name: step1.name, materialType: step1.materialType, category: step1.category,
+            color: step2.color, finish: step2.finish, thickness: step2.thickness,
+            dimensions: step2.dimensions, warehouseCity: step2.warehouseCity,
+            pricePerUnit: parseFloat(step1.pricePerUnit) || 0, unit: step1.unit,
+            stockQty: parseInt(step1.stockQty) || 0,
+            status: action === "draft" ? "DRAFT" : "PENDING_APPROVAL",
+            imageUrls, videoUrl,
           });
           if (!result.ok) {
+            if (originalListing) setListings((prev) => prev.map((l) => (l.id === targetId ? originalListing : l)));
             setSubmitError(result.error ?? "Failed to update listing.");
           }
         });
+      } else {
+        const tempId = `tmp-${Date.now()}`;
+        setListings((prev) => [{
+          id: tempId, isOutOfStock: false, views: 0, createdAt: Math.floor(Date.now() / 1000),
+          ...updatedFields,
+        } as VendorListing, ...prev]);
+        startTransition(async () => {
+          const result = await submitProduct({
+            name: step1.name, materialType: step1.materialType, category: step1.category,
+            color: step2.color, finish: step2.finish, thickness: step2.thickness,
+            dimensions: step2.dimensions, warehouseCity: step2.warehouseCity,
+            pricePerUnit: parseFloat(step1.pricePerUnit) || 0, unit: step1.unit,
+            stockQty: parseInt(step1.stockQty) || 0,
+            status: action === "draft" ? "DRAFT" : "PENDING_APPROVAL",
+            imageUrls, videoUrl,
+          });
+          if (result.ok && result.id) {
+            setListings((prev) => prev.map((l) => (l.id === tempId ? { ...l, id: result.id! } : l)));
+          } else if (!result.ok) {
+            setListings((prev) => prev.filter((l) => l.id !== tempId));
+            setSubmitError(result.error ?? "Failed to save listing. Please try again.");
+          }
+        });
       }
+
+      setEditingId(null);
+      setEditData(null);
+      setTimeout(() => setActiveNav("overview"), 2000);
     },
-    []
+    [editingId, listings]
   );
 
-  // ── Upload helper (shared by create + update) ──
-  async function uploadMedia(data: { step1: FormStep1; step2: FormStep2; step3: FormStep3 }) {
-    let imageUrls: string[] = [];
-    let videoUrl: string | null = null;
+  // ── Filter helper ──
+  const filteredByStatus = (statuses: ListingStatus[]) =>
+    listings.filter((l) => statuses.includes(l.status));
 
-    const imageFiles = data.step3.files.slice(0, 6).filter(Boolean) as File[];
-    if (imageFiles.length > 0) {
-      try {
-        const fd = new FormData();
-        imageFiles.forEach((f) => fd.append("files", f));
-        const { urls } = await uploadProductImages(fd);
-        imageUrls = urls;
-      } catch {
-        // Upload failed — product saves without images
-      }
-    }
+  const meta = PAGE_META[activeNav];
 
-    const videoFile = data.step3.files[6];
-    if (videoFile) {
-      try {
-        const { signedUrl, publicUrl } = await createVideoUploadUrl(videoFile.name);
-        if (signedUrl && publicUrl) {
-          const res = await fetch(signedUrl, {
-            method: "PUT",
-            body: videoFile,
-            headers: { "Content-Type": videoFile.type || "video/mp4" },
-          });
-          if (res.ok) videoUrl = publicUrl;
-        }
-      } catch {
-        // Video upload failed — proceed without it
-      }
-    }
-
-    return { imageUrls, videoUrl };
-  }
-
-  const pendingCount = listings.filter(
-    (l) => l.status === "PENDING_APPROVAL" || l.status === "CHANGES_REQUESTED"
-  ).length;
+  // ── Add button in header ──
+  const headerRight = (
+    <button
+      onClick={() => { setEditData(null); setEditingId(null); setActiveNav("add"); }}
+      className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white font-sans font-semibold text-[13px] rounded-xl hover:bg-stone-800 transition-colors"
+    >
+      <Plus size={14} />
+      Add Product
+    </button>
+  );
 
   return (
-    <>
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 py-6 shadow-sm">
-        <Container>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex items-center justify-between gap-4 flex-wrap"
-          >
-            <div className="flex items-center gap-4">
-              {/* Avatar */}
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-gold/20 to-amber-gold/8 border border-amber-gold/20 flex items-center justify-center flex-shrink-0">
-                <span className="font-serif text-lg font-bold text-amber-gold leading-none">
-                  {companyName[0]?.toUpperCase() ?? "V"}
-                </span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-sans text-[10px] font-semibold text-gray-400 uppercase tracking-[0.16em]">
-                    Vendor Portal
-                  </p>
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-full">
-                    <BadgeCheck size={9} className="text-emerald-500" />
-                    <span className="text-[9px] font-sans font-semibold text-emerald-600">
-                      Verified
-                    </span>
-                  </div>
-                </div>
-                <h1 className="font-serif text-2xl font-bold text-gray-900 leading-tight">
-                  {companyName}
-                </h1>
-                {city && (
-                  <div className="flex items-center gap-1.5 mt-0.5 text-gray-400 text-xs font-sans">
-                    <MapPin size={10} className="text-amber-gold" />
-                    {city}, India
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <motion.button
-                onClick={() => {
-                  setEditData(null);
-                  editIdRef.current = null;
-                  setActiveTab("submit");
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-amber-gold text-white font-sans font-semibold text-sm rounded-xl hover:bg-amber-gold/90 transition-colors shadow-sm"
-              >
-                <Plus size={15} />
-                Add New Listing
-              </motion.button>
-
-              <form action={signOutAction}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50 rounded-xl text-xs font-sans font-semibold transition-all"
-                >
-                  <LogOut size={13} />
-                  Sign Out
-                </button>
-              </form>
-            </div>
-          </motion.div>
-        </Container>
-      </div>
-
-      {/* Page body */}
-      <div className="bg-gray-50 min-h-screen">
-        <Container>
-          <div className="py-8">
-            {submitError && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 p-3.5 bg-red-50 border border-red-200/60 rounded-xl"
-              >
-                <p className="font-sans text-sm text-red-600">{submitError}</p>
-              </motion.div>
-            )}
-
-            <TabBar
-              active={activeTab}
-              onChange={(t) => {
-                setActiveTab(t);
-                if (t === "submit") {
-                  setEditData(null);
-                  editIdRef.current = null;
-                }
-              }}
-              pendingCount={pendingCount}
-            />
-
-            <AnimatePresence mode="wait">
-              {activeTab === "overview" ? (
-                <motion.div
-                  key="overview"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.25 }}
-                  className="space-y-8"
-                >
-                  <KPICards listings={listings} />
-                  <div className="border-t border-stone-dark/7" />
-                  <ListingsTable
-                    listings={listings}
-                    onToggleOOS={handleToggleOOS}
-                    onEditListing={handleEditListing}
-                    onViewDetails={(id) => setDetailListingId(id)}
-                  />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="submit"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {editData && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="max-w-2xl mx-auto mb-5 p-3.5 bg-orange-50 border border-orange-200/60 rounded-xl flex items-center gap-2.5"
-                    >
-                      <span className="text-orange-500 text-sm">⚠</span>
-                      <p className="font-sans text-xs text-orange-700 font-medium">
-                        Editing a listing with admin feedback — address all
-                        comments before resubmitting.
-                      </p>
-                    </motion.div>
-                  )}
-                  <ProductSubmissionForm
-                    onSubmit={handleFormSubmit}
-                    editListing={editData}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </Container>
-      </div>
-
-      {/* Product detail modal */}
+    <DashboardShell
+      navItems={navItems}
+      activeNav={activeNav}
+      onNavChange={(id) => {
+        if (id !== "add") { setEditData(null); setEditingId(null); }
+        setActiveNav(id as NavId);
+      }}
+      user={{
+        name: vendorUser.name,
+        email: vendorUser.email,
+        role: "VENDOR",
+        subtitle: companyName,
+      }}
+      pageTitle={meta.title}
+      pageSubtitle={meta.subtitle}
+      headerRight={activeNav !== "add" ? headerRight : undefined}
+    >
+      {/* Error banner */}
       <AnimatePresence>
-        {detailListing && (
-          <VendorProductDetailModal
-            key={detailListing.id}
-            listing={detailListing}
-            onClose={() => setDetailListingId(null)}
-            onEdit={() => handleEditListing(detailListing.id)}
-          />
+        {submitError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mx-6 mt-4 p-3.5 bg-red-50 border border-red-200/60 rounded-xl flex items-center gap-2"
+          >
+            <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
+            <p className="font-sans text-sm text-red-600">{submitError}</p>
+          </motion.div>
         )}
       </AnimatePresence>
-    </>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeNav}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.18 }}
+          className="h-full"
+        >
+          {activeNav === "overview" && (
+            <OverviewContent listings={listings} onNavigate={setActiveNav} />
+          )}
+
+          {activeNav === "add" && (
+            <div className="p-6">
+              {editData && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="max-w-2xl mx-auto mb-5 p-3.5 bg-orange-50 border border-orange-200/60 rounded-xl flex items-center gap-2.5"
+                >
+                  <span className="text-orange-500 text-sm">⚠</span>
+                  <p className="font-sans text-xs text-orange-700 font-medium">
+                    Editing a listing with admin feedback — address all comments before resubmitting.
+                  </p>
+                </motion.div>
+              )}
+              <ProductSubmissionForm onSubmit={handleFormSubmit} editListing={editData} />
+            </div>
+          )}
+
+          {activeNav === "all" && (
+            <div className="p-6">
+              <ListingsTable
+                listings={listings}
+                onToggleOOS={handleToggleOOS}
+                onEditListing={handleEditListing}
+                onDeleteListing={handleDeleteListing}
+              />
+            </div>
+          )}
+
+          {activeNav === "pending" && (
+            <div className="p-6">
+              <ListingsTable
+                listings={filteredByStatus(["PENDING_APPROVAL", "CHANGES_REQUESTED"])}
+                onToggleOOS={handleToggleOOS}
+                onEditListing={handleEditListing}
+                onDeleteListing={handleDeleteListing}
+              />
+            </div>
+          )}
+
+          {activeNav === "approved" && (
+            <div className="p-6">
+              <ListingsTable
+                listings={filteredByStatus(["APPROVED"])}
+                onToggleOOS={handleToggleOOS}
+                onEditListing={handleEditListing}
+                onDeleteListing={handleDeleteListing}
+              />
+            </div>
+          )}
+
+          {activeNav === "rejected" && (
+            <div className="p-6">
+              <ListingsTable
+                listings={filteredByStatus(["REJECTED", "DRAFT"])}
+                onToggleOOS={handleToggleOOS}
+                onEditListing={handleEditListing}
+                onDeleteListing={handleDeleteListing}
+              />
+            </div>
+          )}
+
+          {activeNav === "profile" && (
+            <VendorProfileCard profile={vendorProfile} />
+          )}
+
+          {activeNav === "settings" && <SettingsPlaceholder />}
+        </motion.div>
+      </AnimatePresence>
+    </DashboardShell>
   );
 }

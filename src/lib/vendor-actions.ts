@@ -4,6 +4,7 @@ import { db } from "./db";
 import { getServerSession } from "./auth-actions";
 import { supabaseAdmin } from "./supabase";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 const PRODUCT_IMAGE_BUCKET = "product-images";
 
@@ -14,7 +15,13 @@ async function ensureImageBucket() {
     if (!exists) {
       await supabaseAdmin.storage.createBucket(PRODUCT_IMAGE_BUCKET, {
         public: true,
-        fileSizeLimit: 10485760, // 10 MB
+        fileSizeLimit: 104857600, // 100 MB — large enough for video uploads
+      });
+    } else {
+      // Ensure the limit is large enough to accept video files
+      await supabaseAdmin.storage.updateBucket(PRODUCT_IMAGE_BUCKET, {
+        public: true,
+        fileSizeLimit: 104857600, // 100 MB
       });
     }
   } catch {
@@ -22,30 +29,97 @@ async function ensureImageBucket() {
   }
 }
 
-// Returns a signed upload URL for direct client-to-Supabase upload (avoids server action body size limit)
-export async function createVideoUploadUrl(
-  filename: string
-): Promise<{ signedUrl: string | null; publicUrl: string | null }> {
+export async function uploadProductVideo(
+  formData: FormData
+): Promise<{ url: string | null; error?: string }> {
   const session = await getServerSession();
-  if (!session || session.user.role !== "VENDOR")
-    return { signedUrl: null, publicUrl: null };
+  if (!session || session.user.role !== "VENDOR") return { url: null, error: "Unauthorized" };
 
   await ensureImageBucket();
 
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "mp4";
+  const file = formData.get("file") as File | null;
+  if (!file || file.size === 0) return { url: null };
+
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+    const path = `${session.user.id}/video-${Date.now()}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    const { error } = await supabaseAdmin.storage
+      .from(PRODUCT_IMAGE_BUCKET)
+      .upload(path, buffer, { contentType: file.type || "video/mp4", upsert: true });
+
+    if (error) {
+      console.error("[uploadProductVideo] storage error:", error);
+      return { url: null, error: error.message ?? "Video upload failed" };
+    }
+
+    const { data } = supabaseAdmin.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
+    return { url: data?.publicUrl ?? null };
+  } catch (err) {
+    console.error("[uploadProductVideo]", err);
+    return { url: null, error: "Video upload failed" };
+  }
+}
+
+// ─── Direct-upload signed URLs (browser → Supabase, no server relay) ──────────
+// Returns a short-lived signed URL so the browser can PUT the file directly
+// to Supabase storage without it travelling through the Next.js server first.
+
+export async function getVideoUploadUrl(
+  fileName: string,
+  fileType: string
+): Promise<{ signedUrl: string; publicUrl: string } | { error: string }> {
+  const session = await getServerSession();
+  if (!session || session.user.role !== "VENDOR") return { error: "Unauthorized" };
+
+  await ensureImageBucket();
+
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "mp4";
   const path = `${session.user.id}/video-${Date.now()}.${ext}`;
 
   const { data, error } = await supabaseAdmin.storage
     .from(PRODUCT_IMAGE_BUCKET)
     .createSignedUploadUrl(path);
 
-  if (error || !data) return { signedUrl: null, publicUrl: null };
+  if (error || !data) {
+    console.error("[getVideoUploadUrl]", error);
+    return { error: error?.message ?? "Failed to create upload URL" };
+  }
 
-  const { data: urlData } = supabaseAdmin.storage
+  const { data: pub } = supabaseAdmin.storage
     .from(PRODUCT_IMAGE_BUCKET)
     .getPublicUrl(path);
 
-  return { signedUrl: data.signedUrl, publicUrl: urlData?.publicUrl ?? null };
+  return { signedUrl: data.signedUrl, publicUrl: pub.publicUrl };
+}
+
+export async function getImageUploadUrl(
+  fileName: string,
+  fileType: string
+): Promise<{ signedUrl: string; publicUrl: string } | { error: string }> {
+  const session = await getServerSession();
+  if (!session || session.user.role !== "VENDOR") return { error: "Unauthorized" };
+
+  await ensureImageBucket();
+
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
+  const path = `${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .createSignedUploadUrl(path);
+
+  if (error || !data) {
+    console.error("[getImageUploadUrl]", error);
+    return { error: error?.message ?? "Failed to create upload URL" };
+  }
+
+  const { data: pub } = supabaseAdmin.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .getPublicUrl(path);
+
+  return { signedUrl: data.signedUrl, publicUrl: pub.publicUrl };
 }
 
 export async function uploadProductImages(
@@ -114,8 +188,7 @@ export type ProductRow = {
   status: string;
   views: number;
   createdAt: string;
-  imageUrls: string[];
-  videoUrl: string | null;
+  adminFeedback?: string | null;
 };
 
 export type SubmitProductInput = {
@@ -163,13 +236,14 @@ export async function getVendorProfile(): Promise<VendorProfileData | null> {
 export async function getVendorProducts(): Promise<ProductRow[]> {
   const session = await requireVendor();
   try {
+    // Ensure columns exist (idempotent)
     await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "adminFeedback" TEXT DEFAULT NULL`).catch(() => {});
+
     const { rows } = await db.query(
       `SELECT id, "vendorId", name, "materialType", category, color, finish,
         thickness, dimensions, "warehouseCity", "pricePerUnit", unit,
-        "stockQty", "isOutOfStock", status, views, "createdAt",
-        COALESCE("imageUrls", '{}') AS "imageUrls",
-        "videoUrl"
+        "stockQty", "isOutOfStock", status, views, "createdAt", "adminFeedback"
        FROM products WHERE "vendorId" = $1 ORDER BY "createdAt" DESC`,
       [session.user.id]
     );
@@ -218,6 +292,8 @@ export async function submitProduct(
         data.videoUrl ?? null,
       ]
     );
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
     return { ok: true, id: rows[0].id };
   } catch (err) {
     console.error("[submitProduct]", err);
@@ -225,41 +301,130 @@ export async function submitProduct(
   }
 }
 
+// ─── Update an existing REJECTED / CHANGES_REQUESTED / DRAFT product ──────────
+// Uses the same ID — never creates a duplicate.
 export async function updateProduct(
-  data: SubmitProductInput & { id: string }
+  productId: string,
+  data: SubmitProductInput
 ): Promise<{ ok: boolean; error?: string }> {
   const session = await getServerSession();
   if (!session || session.user.role !== "VENDOR")
     return { ok: false, error: "Unauthorized" };
+  if (session.user.status !== "ACTIVE")
+    return { ok: false, error: "Your account is not yet active." };
 
   try {
+    // Ensure required columns exist (idempotent)
     await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "videoUrl" TEXT DEFAULT NULL`).catch(() => {});
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "adminFeedback" TEXT DEFAULT NULL`).catch(() => {});
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
-    await db.query(
+    // Keep existing media if no new media was uploaded
+    const result = await db.query(
       `UPDATE products SET
-         name = $1, "materialType" = $2, category = $3, color = $4,
-         finish = $5, thickness = $6, dimensions = $7, "warehouseCity" = $8,
-         "pricePerUnit" = $9, unit = $10, "stockQty" = $11, status = $12,
-         "imageUrls" = CASE WHEN cardinality($13::text[]) > 0
-                            THEN $13::text[] ELSE "imageUrls" END,
-         "videoUrl"   = CASE WHEN $14::text IS NOT NULL
-                            THEN $14::text ELSE "videoUrl" END,
-         "updatedAt"  = NOW()
-       WHERE id = $15 AND "vendorId" = $16`,
+         name             = $1,
+         "materialType"   = $2,
+         category         = $3,
+         color            = $4,
+         finish           = $5,
+         thickness        = $6,
+         dimensions       = $7,
+         "warehouseCity"  = $8,
+         "pricePerUnit"   = $9,
+         unit             = $10,
+         "stockQty"       = $11,
+         status           = $12,
+         "imageUrls"      = CASE
+                              WHEN array_length($13::text[], 1) > 0
+                              THEN $13::text[]
+                              ELSE "imageUrls"
+                            END,
+         "videoUrl"       = CASE WHEN $14::text IS NOT NULL THEN $14::text ELSE "videoUrl" END,
+         "adminFeedback"  = NULL,
+         "updatedAt"      = NOW()
+       WHERE id = $15
+         AND "vendorId" = $16
+         AND status != 'APPROVED'`,
       [
-        data.name, data.materialType, data.category, data.color,
-        data.finish, data.thickness, data.dimensions, data.warehouseCity,
-        data.pricePerUnit, data.unit, data.stockQty, data.status,
+        data.name,
+        data.materialType,
+        data.category,
+        data.color,
+        data.finish,
+        data.thickness,
+        data.dimensions,
+        data.warehouseCity,
+        data.pricePerUnit,
+        data.unit,
+        data.stockQty,
+        data.status,
         data.imageUrls ?? [],
         data.videoUrl ?? null,
-        data.id,
+        productId,
         session.user.id,
       ]
     );
+
+    // If rowCount is 0, the WHERE clause didn't match — nothing was updated
+    const rowCount = (result as unknown as { rowCount: number | null }).rowCount ?? 0;
+    if (rowCount === 0) {
+      // Log for debugging
+      console.warn(`[updateProduct] 0 rows updated for product ${productId} (vendor ${session.user.id})`);
+      return { ok: false, error: "Could not update this product. It may have already been submitted or approved." };
+    }
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
     return { ok: true };
   } catch (err) {
     console.error("[updateProduct]", err);
-    return { ok: false, error: "Failed to update product. Please try again." };
+    return { ok: false, error: "Failed to update product." };
+  }
+}
+
+// ─── Move a REJECTED / CHANGES_REQUESTED product to DRAFT when vendor starts editing ──
+// Persists the "editing in progress" state so a page refresh shows DRAFT, not REJECTED.
+export async function markProductAsDraft(
+  productId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireVendor();
+  try {
+    await db.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
+    await db.query(
+      `UPDATE products
+         SET status = 'DRAFT', "updatedAt" = NOW()
+       WHERE id = $1
+         AND "vendorId" = $2
+         AND status IN ('REJECTED','CHANGES_REQUESTED')`,
+      [productId, session.user.id]
+    );
+    revalidatePath("/vendor/dashboard");
+    return { ok: true };
+  } catch (err) {
+    console.error("[markProductAsDraft]", err);
+    return { ok: false, error: "Failed to save draft state." };
+  }
+}
+
+// ─── Delete a REJECTED or DRAFT product ───────────────────────────────────────
+export async function deleteProduct(
+  productId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireVendor();
+  try {
+    const result = await db.query(
+      `DELETE FROM products WHERE id = $1 AND "vendorId" = $2 AND status IN ('REJECTED','DRAFT')`,
+      [productId, session.user.id]
+    );
+    // pg returns rowCount on mutation queries
+    if ((result as unknown as { rowCount: number }).rowCount === 0) {
+      return { ok: false, error: "Product not found or cannot be deleted in its current state." };
+    }
+    revalidatePath("/vendor/dashboard");
+    return { ok: true };
+  } catch (err) {
+    console.error("[deleteProduct]", err);
+    return { ok: false, error: "Failed to delete product." };
   }
 }
 

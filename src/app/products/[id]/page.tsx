@@ -30,7 +30,7 @@ async function getDbProduct(id: string): Promise<CatalogProduct | null> {
     const { rows } = await db.query(
       `SELECT id, name, "materialType", category, color, finish, thickness,
               "warehouseCity", "pricePerUnit", unit, "stockQty", "isOutOfStock",
-              views, "createdAt", "imageUrls"
+              views, "createdAt", "imageUrls", "videoUrl"
        FROM products
        WHERE id = $1 AND status = 'APPROVED'
        LIMIT 1`,
@@ -42,6 +42,12 @@ async function getDbProduct(id: string): Promise<CatalogProduct | null> {
     const style = MATERIAL_BG[mat] ?? MATERIAL_BG.other;
     const price = Number(r.pricePerUnit) || 0;
     const isOOS = r.isOutOfStock || r.stockQty === 0;
+
+    const imageUrls: string[] = Array.isArray(r.imageUrls) ? r.imageUrls : [];
+    // Append video URL so MediaGallery handles it via isVideoUrl() detection
+    const allMedia: string[] = r.videoUrl
+      ? [...imageUrls, r.videoUrl as string]
+      : imageUrls;
 
     return {
       id: r.id,
@@ -61,10 +67,8 @@ async function getDbProduct(id: string): Promise<CatalogProduct | null> {
       origin: r.warehouseCity ? `${r.warehouseCity}, India` : "India",
       bg: style.bg,
       textLight: style.textLight,
-      imageUrl: Array.isArray(r.imageUrls) && r.imageUrls.length > 0
-        ? r.imageUrls[0]
-        : undefined,
-      imageUrls: Array.isArray(r.imageUrls) ? r.imageUrls : [],
+      imageUrl: imageUrls.length > 0 ? imageUrls[0] : undefined,
+      imageUrls: allMedia,
     };
   } catch {
     return null;

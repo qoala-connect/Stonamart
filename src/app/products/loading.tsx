@@ -1,6 +1,6 @@
 export default function ProductsLoading() {
   return (
-    <div className="min-h-screen bg-[#faf9f7]">
+    <div className="min-h-screen bg-[#FBF7F1]">
       {/* Skeleton header spacer */}
       <div className="h-16 bg-white border-b border-gray-100" />
 

@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Eye,
   Edit3,
+  Trash2,
   Search,
   Filter,
 } from "lucide-react";
@@ -64,6 +65,59 @@ const STATUS_CFG: Record<
 const NOISE_URI =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E\")";
 
+// ─── Delete confirm modal ─────────────────────────────────────────────────────
+function DeleteConfirmModal({
+  listing,
+  onClose,
+  onConfirm,
+}: {
+  listing: VendorListing;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-2xl mb-4 mx-auto">
+          <Trash2 size={20} className="text-red-500" />
+        </div>
+        <h3 className="font-serif text-lg font-bold text-stone-950 mb-2 text-center">Delete this listing?</h3>
+        <p className="font-sans text-sm text-stone-dark/55 mb-1 text-center">
+          Are you sure you want to delete <strong>&ldquo;{listing.name}&rdquo;</strong>?
+        </p>
+        <p className="font-sans text-xs text-stone-dark/40 mb-6 text-center">
+          This cannot be undone. All product data will be permanently removed.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-stone-dark/12 rounded-xl text-sm font-sans font-medium text-stone-dark/55 hover:bg-stone-dark/4 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-sans font-semibold hover:bg-red-700 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── OOS Toggle ───────────────────────────────────────────────────────────────
 function OOSToggle({
   checked,
@@ -94,10 +148,12 @@ function FeedbackPanel({
   feedback,
   status,
   onEdit,
+  onDelete,
 }: {
   feedback: string;
   status: ListingStatus;
   onEdit: () => void;
+  onDelete?: () => void;
 }) {
   const isRejected = status === "REJECTED";
   return (
@@ -127,19 +183,32 @@ function FeedbackPanel({
             <p className="text-[13px]">{feedback}</p>
           </div>
         </div>
-        {!isRejected && (
-          <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex justify-end gap-2">
+          {isRejected && onDelete && (
             <motion.button
-              onClick={onEdit}
+              onClick={onDelete}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-white text-xs font-semibold rounded-lg bg-stone-600 hover:bg-stone-700 transition-colors"
             >
-              <Edit3 size={11} />
-              Edit &amp; Resubmit
+              <Trash2 size={11} />
+              Delete
             </motion.button>
-          </div>
-        )}
+          )}
+          <motion.button
+            onClick={onEdit}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-white text-xs font-semibold rounded-lg transition-colors ${
+              isRejected
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-orange-600 hover:bg-orange-700"
+            }`}
+          >
+            <Edit3 size={11} />
+            Edit &amp; Resubmit
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );
@@ -152,7 +221,7 @@ function ListingRow({
   onToggleExpand,
   onToggleOOS,
   onEdit,
-  onView,
+  onDelete,
   index,
 }: {
   listing: VendorListing;
@@ -160,12 +229,16 @@ function ListingRow({
   onToggleExpand: () => void;
   onToggleOOS: () => void;
   onEdit: () => void;
-  onView: () => void;
+  onDelete?: () => void;
   index: number;
 }) {
   const sc = STATUS_CFG[listing.status];
+  // Show the feedback panel for REJECTED, CHANGES_REQUESTED, and DRAFT products
+  // that still carry adminFeedback (vendor clicked Edit but hasn't submitted yet).
   const hasAlert =
-    listing.status === "CHANGES_REQUESTED" || listing.status === "REJECTED";
+    listing.status === "REJECTED" ||
+    listing.status === "CHANGES_REQUESTED" ||
+    (listing.status === "DRAFT" && !!listing.adminFeedback);
 
   return (
     <motion.div
@@ -179,10 +252,12 @@ function ListingRow({
       layout
       className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
         isExpanded
-          ? hasAlert && listing.status === "CHANGES_REQUESTED"
-            ? "border-orange-300/60 shadow-[0_0_0_3px_rgba(249,115,22,0.06)]"
-            : listing.status === "REJECTED"
+          ? listing.status === "REJECTED"
             ? "border-red-300/60 shadow-[0_0_0_3px_rgba(239,68,68,0.06)]"
+            : listing.status === "CHANGES_REQUESTED"
+            ? "border-orange-300/60 shadow-[0_0_0_3px_rgba(249,115,22,0.06)]"
+            : listing.status === "DRAFT" && !!listing.adminFeedback
+            ? "border-amber-300/60 shadow-[0_0_0_3px_rgba(245,158,11,0.06)]"
             : "border-stone-dark/14"
           : "border-stone-dark/8 hover:border-stone-dark/16"
       }`}
@@ -256,17 +331,6 @@ function ListingRow({
           </span>
         </div>
 
-        {/* View details button */}
-        <motion.button
-          onClick={onView}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.93 }}
-          title="View Details"
-          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-stone-dark/5 text-stone-dark/40 hover:bg-amber-gold/10 hover:text-amber-gold transition-colors"
-        >
-          <Eye size={13} />
-        </motion.button>
-
         {/* Action: expand alert */}
         {hasAlert ? (
           <motion.button
@@ -276,6 +340,8 @@ function ListingRow({
             className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${
               listing.status === "REJECTED"
                 ? "bg-red-100 text-red-500 hover:bg-red-200"
+                : listing.status === "DRAFT"
+                ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
                 : "bg-orange-100 text-orange-500 hover:bg-orange-200"
             }`}
           >
@@ -299,6 +365,7 @@ function ListingRow({
             feedback={listing.adminFeedback}
             status={listing.status}
             onEdit={onEdit}
+            onDelete={onDelete}
           />
         )}
       </AnimatePresence>
@@ -311,7 +378,7 @@ interface ListingsTableProps {
   listings: VendorListing[];
   onToggleOOS: (id: string) => void;
   onEditListing: (id: string) => void;
-  onViewDetails: (id: string) => void;
+  onDeleteListing?: (id: string) => void;
 }
 
 const STATUS_FILTER_OPTIONS: { value: string; label: string }[] = [
@@ -328,11 +395,12 @@ export function ListingsTable({
   listings,
   onToggleOOS,
   onEditListing,
-  onViewDetails,
+  onDeleteListing,
 }: ListingsTableProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [deleteTarget, setDeleteTarget] = useState<VendorListing | null>(null);
 
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
@@ -359,6 +427,20 @@ export function ListingsTable({
 
   return (
     <div>
+      {/* Delete confirm modal */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <DeleteConfirmModal
+            listing={deleteTarget}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={() => {
+              if (onDeleteListing) onDeleteListing(deleteTarget.id);
+              setDeleteTarget(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Table header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
@@ -452,7 +534,11 @@ export function ListingsTable({
               onToggleExpand={() => toggleExpand(listing.id)}
               onToggleOOS={() => onToggleOOS(listing.id)}
               onEdit={() => onEditListing(listing.id)}
-              onView={() => onViewDetails(listing.id)}
+              onDelete={
+                listing.status === "REJECTED" && onDeleteListing
+                  ? () => setDeleteTarget(listing)
+                  : undefined
+              }
             />
           ))}
         </div>

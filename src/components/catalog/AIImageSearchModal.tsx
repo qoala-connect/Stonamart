@@ -103,16 +103,16 @@ export function AIImageSearchModal({ isOpen, onClose, onSearchComplete }: AIImag
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(URL.createObjectURL(file));
-    setCompletedSteps([]);
-    setCurrentStep(0);
-    setAnimDone(false);
-    setApiDone(false);
-    setApiError(null);
-    setModalState("processing");
-    runApiSearch(file);
-  }, [imagePreview, runApiSearch]);
+    // Store image in sessionStorage and redirect to the AI search results page
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      try { sessionStorage.setItem("pending_search_image", dataUrl); } catch {}
+      onClose();
+      router.push("/ai-search");
+    };
+    reader.readAsDataURL(file);
+  }, [onClose, router]);
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -252,7 +252,7 @@ export function AIImageSearchModal({ isOpen, onClose, onSearchComplete }: AIImag
                       >
                         {/* Background texture hint */}
                         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,169,97,0.04),transparent_70%)]" />
+                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,90,0.04),transparent_70%)]" />
                         </div>
 
                         {/* Icon */}
@@ -339,7 +339,7 @@ export function AIImageSearchModal({ isOpen, onClose, onSearchComplete }: AIImag
                           <div className="absolute -inset-1.5 rounded-3xl">
                             <motion.div
                               className="w-full h-full rounded-3xl border-2"
-                              style={{ borderColor: "transparent", borderTopColor: "#c9a961", borderRightColor: "rgba(201,169,97,0.2)" }}
+                              style={{ borderColor: "transparent", borderTopColor: "#B8865A", borderRightColor: "rgba(184,134,90,0.2)" }}
                               animate={{ rotate: 360 }}
                               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                             />
@@ -616,7 +616,7 @@ export function AIImageSearchModal({ isOpen, onClose, onSearchComplete }: AIImag
                             onClick={handleViewInCatalog}
                             whileHover={{ scale: 1.03, x: 2 }}
                             whileTap={{ scale: 0.97 }}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-amber-gold text-stone-950 font-sans text-[12px] font-bold rounded-xl shadow-[0_4px_20px_rgba(201,169,97,0.35)] hover:shadow-[0_4px_28px_rgba(201,169,97,0.5)] transition-all"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-amber-gold text-stone-950 font-sans text-[12px] font-bold rounded-xl shadow-[0_4px_20px_rgba(184,134,90,0.35)] hover:shadow-[0_4px_28px_rgba(184,134,90,0.5)] transition-all"
                           >
                             View all in Catalog <ArrowRight size={13} />
                           </motion.button>

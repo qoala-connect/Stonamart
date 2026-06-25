@@ -3,11 +3,17 @@
 import React, { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
+import { SafeImage } from "@/components/ui/SafeImage";
 import {
   MapPin, Shield, Sparkles, TrendingUp, Users,
   CheckCircle2, ArrowRight, Star, Package, Award,
 } from "lucide-react";
-import { MarbleOverlay } from "@/components/ui";
+
+// ─── Real stone photography (Unsplash, free license) ──────────────────────────
+const PHOTOS = {
+  heroKitchen: "https://images.unsplash.com/photo-1633119713175-c53c29479984?w=1600&q=80",
+  greyMarble: "https://images.unsplash.com/photo-1704530953106-9cdd4342dd36?w=1200&q=80",
+};
 
 // ─── Fade-up helper ───────────────────────────────────────────────────────────
 function FadeUp({
@@ -33,13 +39,6 @@ function FadeUp({
     </motion.div>
   );
 }
-
-// ─── Marble stone texture gradient ───────────────────────────────────────────
-const HERO_BG = [
-  "linear-gradient(155deg, transparent 0%, rgba(139,115,85,0.12) 35%, transparent 65%)",
-  "linear-gradient(55deg, transparent 20%, rgba(201,169,97,0.07) 50%, transparent 76%)",
-  "linear-gradient(165deg, #0a0a0a 0%, #141414 40%, #0e0e0e 70%, #1a1a1a 100%)",
-].join(", ");
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 const STATS = [
@@ -104,39 +103,27 @@ export function AboutPage() {
     <div className="font-sans">
 
       {/* ── Hero ── */}
-      <section
-        className="relative overflow-hidden py-28 md:py-36"
-        style={{ background: HERO_BG }}
-      >
-        {/* SVG noise overlay */}
-        <svg
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.045]"
-          style={{ mixBlendMode: "overlay" }}
-        >
-          <filter id="about-noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="3" stitchTiles="stitch" />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#about-noise)" />
-        </svg>
-
-        {/* Gold veining lines */}
-        <svg
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.06]"
-          viewBox="0 0 1200 500"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <path d="M 0 120 Q 300 80 600 150 T 1200 100" stroke="#c9a961" strokeWidth="1.5" fill="none" />
-          <path d="M 0 300 Q 400 250 700 320 T 1200 280" stroke="#c9a961" strokeWidth="1" fill="none" />
-          <path d="M 200 0 Q 250 180 180 380" stroke="#8b7355" strokeWidth="0.8" fill="none" />
-        </svg>
+      <section className="relative overflow-hidden py-28 md:py-36">
+        {/* Real photo background */}
+        <div className="absolute inset-0">
+          <SafeImage
+            src={PHOTOS.heroKitchen}
+            alt="Modern kitchen with marble countertops"
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#221c16]/92 via-[#221c16]/80 to-[#221c16]/55" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1c1712]/70 via-transparent to-transparent" />
+        </div>
 
         {/* Gold left edge accent */}
         <div
           className="absolute top-0 left-0 h-full w-[3px]"
           style={{
             background:
-              "linear-gradient(180deg, transparent 0%, #c9a961 25%, #e8dcc4 55%, #c9a961 80%, transparent 100%)",
+              "linear-gradient(180deg, transparent 0%, #B8865A 25%, #E8DCC4 55%, #B8865A 80%, transparent 100%)",
           }}
         />
 
@@ -149,10 +136,10 @@ export function AboutPage() {
             <p className="text-[10px] font-sans font-bold text-amber-gold/70 uppercase tracking-[0.28em] mb-4">
               Our Story
             </p>
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-stone-light leading-[1.1] max-w-3xl">
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-white leading-[1.1] max-w-3xl">
               We built the marketplace we always wished existed.
             </h1>
-            <p className="mt-6 font-sans text-[15px] text-stone-light/45 leading-relaxed max-w-xl">
+            <p className="mt-6 font-sans text-[15px] text-white/55 leading-relaxed max-w-xl">
               Stonamart is India&apos;s curated premium stone marketplace — connecting architects,
               designers, and builders with verified suppliers, transparent pricing, and genuine
               quality assurance.
@@ -161,14 +148,14 @@ export function AboutPage() {
             <div className="flex items-center gap-4 mt-10 flex-wrap">
               <Link
                 href="/products"
-                className="flex items-center gap-2 px-6 py-3 bg-amber-gold text-stone-950 font-sans font-semibold text-sm rounded-xl hover:bg-amber-gold/85 transition-colors shadow-[0_4px_20px_rgba(201,169,97,0.3)]"
+                className="flex items-center gap-2 px-6 py-3 bg-amber-gold text-white font-sans font-semibold text-sm rounded-full hover:bg-[#A6754A] transition-colors shadow-[0_4px_20px_rgba(184,134,90,0.3)]"
               >
                 Browse Catalog
                 <ArrowRight size={15} />
               </Link>
               <Link
                 href="/vendor/register"
-                className="flex items-center gap-2 px-6 py-3 border border-white/15 text-white/70 font-sans font-semibold text-sm rounded-xl hover:border-white/30 hover:text-white transition-all"
+                className="flex items-center gap-2 px-6 py-3 border border-white/20 text-white/80 font-sans font-semibold text-sm rounded-full hover:border-white/40 hover:text-white transition-all"
               >
                 Become a Vendor
               </Link>
@@ -177,17 +164,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Stats bar — White Carrara marble ── */}
-      <section
-        className="border-y border-stone-dark/8 relative overflow-hidden"
-        style={{
-          background: [
-            "radial-gradient(ellipse at 30% 50%, rgba(201,169,97,0.06) 0%, transparent 55%)",
-            "linear-gradient(155deg, #f9f7f4 0%, #f1ece5 50%, #f7f3ed 100%)",
-          ].join(", "),
-        }}
-      >
-        <MarbleOverlay variant="white" intensity={0.9} />
+      {/* ── Stats bar ── */}
+      <section className="border-y border-stone-dark/8 bg-white">
         <div className="max-w-5xl mx-auto px-6 md:px-10 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((stat, i) => {
@@ -212,17 +190,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Mission — Cream Travertine ── */}
-      <section
-        className="py-24 relative overflow-hidden"
-        style={{
-          background: [
-            "radial-gradient(ellipse at 20% 30%, rgba(201,169,97,0.08) 0%, transparent 55%)",
-            "linear-gradient(145deg, #f0e7d8 0%, #e8dcc9 40%, #ede4d2 70%, #f0e8da 100%)",
-          ].join(", "),
-        }}
-      >
-        <MarbleOverlay variant="cream" intensity={0.85} />
+      {/* ── Mission ── */}
+      <section className="py-24 bg-[#FBF7F1]">
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             {/* Left: text */}
@@ -254,26 +223,16 @@ export function AboutPage() {
               </ul>
             </FadeUp>
 
-            {/* Right: stone slab visual */}
+            {/* Right: real stone slab photo */}
             <FadeUp delay={0.15}>
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-2xl shadow-stone-dark/10">
-                {/* Marble simulation */}
-                <div
-                  className="w-full h-full"
-                  style={{
-                    background: [
-                      "linear-gradient(140deg, transparent 0%, rgba(139,115,85,0.12) 30%, transparent 60%)",
-                      "linear-gradient(55deg, transparent 20%, rgba(180,155,120,0.09) 50%, transparent 76%)",
-                      "linear-gradient(165deg, #f0ece4 0%, #e4ddd2 35%, #ede7dc 60%, #e0d8cc 100%)",
-                    ].join(", "),
-                  }}
+              <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-luxury-lg">
+                <SafeImage
+                  src={PHOTOS.greyMarble}
+                  alt="Premium grey-veined marble slab"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
                 />
-                {/* Veining overlay */}
-                <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 480 360">
-                  <path d="M 40 80 Q 160 60 240 120 T 480 90" stroke="#8b7355" strokeWidth="1.5" fill="none" />
-                  <path d="M 0 200 Q 120 170 220 210 T 480 185" stroke="#8b7355" strokeWidth="1" fill="none" />
-                  <path d="M 100 0 Q 140 100 110 240 T 180 360" stroke="#c9a961" strokeWidth="0.8" fill="none" />
-                </svg>
                 {/* Label */}
                 <div className="absolute bottom-5 left-5 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-stone-dark/8">
                   <p className="font-sans text-[10px] font-bold text-stone-dark/40 uppercase tracking-widest mb-0.5">
@@ -284,8 +243,8 @@ export function AboutPage() {
                 </div>
                 {/* Star badge */}
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-amber-gold rounded-full px-3 py-1.5">
-                  <Star size={11} className="text-stone-950 fill-stone-950" />
-                  <span className="text-[11px] font-sans font-bold text-stone-950">Top Rated</span>
+                  <Star size={11} className="text-white fill-white" />
+                  <span className="text-[11px] font-sans font-bold text-white">Top Rated</span>
                 </div>
               </div>
             </FadeUp>
@@ -293,17 +252,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Values — White Carrara marble ── */}
-      <section
-        className="py-24 relative overflow-hidden"
-        style={{
-          background: [
-            "radial-gradient(ellipse at 70% 30%, rgba(201,169,97,0.06) 0%, transparent 50%)",
-            "linear-gradient(158deg, #f8f6f3 0%, #f0ebe4 40%, #f5f1ea 70%, #f9f6f2 100%)",
-          ].join(", "),
-        }}
-      >
-        <MarbleOverlay variant="white" intensity={0.95} />
+      {/* ── Values ── */}
+      <section className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <FadeUp className="text-center mb-14">
             <p className="text-[10px] font-sans font-bold text-amber-gold uppercase tracking-[0.2em] mb-3">
@@ -319,9 +269,9 @@ export function AboutPage() {
               const Icon = v.icon;
               return (
                 <FadeUp key={v.title} delay={i * 0.1}>
-                  <div className="p-6 rounded-2xl border border-stone-dark/8 bg-white/60 hover:border-amber-gold/30 hover:shadow-lg hover:shadow-stone-dark/5 transition-all duration-300 group backdrop-blur-sm">
+                  <div className="p-6 rounded-2xl border border-stone-dark/8 bg-[#FBF7F1] hover:border-amber-gold/30 hover:shadow-luxury-lg transition-all duration-300 group">
                     <div className="w-10 h-10 rounded-xl bg-stone-950 flex items-center justify-center mb-4 group-hover:bg-amber-gold transition-colors duration-300">
-                      <Icon size={17} className="text-white group-hover:text-stone-950 transition-colors duration-300" />
+                      <Icon size={17} className="text-white transition-colors duration-300" />
                     </div>
                     <h3 className="font-serif text-[1.1rem] font-bold text-stone-950 mb-2">
                       {v.title}
@@ -337,17 +287,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Timeline — Silver Grey marble ── */}
-      <section
-        className="py-24 relative overflow-hidden"
-        style={{
-          background: [
-            "radial-gradient(ellipse at 25% 25%, rgba(255,255,255,0.4) 0%, transparent 58%)",
-            "linear-gradient(145deg, #dddad5 0%, #d4d0ca 38%, #e0dcd7 65%, #dbd8d2 100%)",
-          ].join(", "),
-        }}
-      >
-        <MarbleOverlay variant="grey" intensity={0.95} />
+      {/* ── Timeline ── */}
+      <section className="py-24 bg-[#F6F0E6]">
         <div className="max-w-4xl mx-auto px-6 md:px-10">
           <FadeUp className="mb-14">
             <p className="text-[10px] font-sans font-bold text-amber-gold uppercase tracking-[0.2em] mb-3">
@@ -375,7 +316,7 @@ export function AboutPage() {
 
                     {/* Card */}
                     <div className={`flex-1 md:w-[calc(50%-2.5rem)] md:px-0 ${i % 2 === 0 ? "md:pr-14 md:text-right" : "md:pl-14 md:ml-auto"}`}>
-                      <div className="bg-white/65 rounded-2xl border border-stone-dark/8 px-6 py-5 shadow-sm relative overflow-hidden"><MarbleOverlay variant="grey" intensity={0.4} />
+                      <div className="bg-white rounded-2xl border border-stone-dark/8 px-6 py-5 shadow-sm">
                         <h3 className="font-serif text-[1rem] font-bold text-stone-950 mb-1.5">
                           {item.title}
                         </h3>
@@ -392,28 +333,19 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── CTA — Black Nero Marquina marble ── */}
+      {/* ── CTA ── */}
       <section
         className="py-20 relative overflow-hidden"
         style={{
           background: [
-            "radial-gradient(ellipse at 25% 25%, rgba(201,169,97,0.09) 0%, transparent 50%)",
-            "linear-gradient(148deg, #0a0a0a 0%, #111111 45%, #0d0d0d 100%)",
+            "radial-gradient(ellipse at 25% 25%, rgba(184,134,90,0.12) 0%, transparent 50%)",
+            "linear-gradient(148deg, #3a2f26 0%, #221c16 45%, #1c1712 100%)",
           ].join(", "),
         }}
       >
-        <MarbleOverlay variant="black" intensity={0.9} />
-        {/* Noise */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.04] pointer-events-none" style={{ mixBlendMode: "overlay" }}>
-          <filter id="cta-noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#cta-noise)" />
-        </svg>
-        {/* Vein */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none" viewBox="0 0 1200 240">
-          <path d="M 0 120 Q 400 80 700 130 T 1200 110" stroke="#c9a961" strokeWidth="1.5" fill="none" />
+        {/* Vein accent */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.08] pointer-events-none" viewBox="0 0 1200 240">
+          <path d="M 0 120 Q 400 80 700 130 T 1200 110" stroke="#B8865A" strokeWidth="1.5" fill="none" />
         </svg>
 
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
@@ -427,14 +359,14 @@ export function AboutPage() {
             <div className="flex items-center justify-center gap-4 flex-wrap">
               <Link
                 href="/products"
-                className="flex items-center gap-2 px-7 py-3.5 bg-amber-gold text-stone-950 font-sans font-semibold text-sm rounded-xl hover:bg-amber-gold/85 transition-colors shadow-[0_4px_20px_rgba(201,169,97,0.3)]"
+                className="flex items-center gap-2 px-7 py-3.5 bg-amber-gold text-white font-sans font-semibold text-sm rounded-full hover:bg-[#A6754A] transition-colors shadow-[0_4px_20px_rgba(184,134,90,0.3)]"
               >
                 Explore Products
                 <ArrowRight size={15} />
               </Link>
               <Link
                 href="/vendor/register"
-                className="flex items-center gap-2 px-7 py-3.5 border border-white/15 text-white/70 font-sans font-semibold text-sm rounded-xl hover:border-white/30 hover:text-white transition-all"
+                className="flex items-center gap-2 px-7 py-3.5 border border-white/20 text-white/80 font-sans font-semibold text-sm rounded-full hover:border-white/40 hover:text-white transition-all"
               >
                 List Your Inventory
               </Link>

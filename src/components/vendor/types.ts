@@ -28,8 +28,6 @@ export interface VendorListing {
   adminFeedback?: string;
   bg: string;
   textLight: boolean;
-  imageUrls?: string[];
-  videoUrl?: string | null;
 }
 
 // ─── Form state shapes ─────────────────────────────────────────────────────────
@@ -53,6 +51,7 @@ export interface FormStep2 {
 export interface FormStep3 {
   files: (File | null)[];
   heroIdx: number;
+  uploadedUrls: (string | null)[]; // [0-5]: image URLs, [6]: video URL; null = not uploaded yet
 }
 
 export const EMPTY_STEP1: FormStep1 = {
@@ -73,5 +72,9 @@ export const EMPTY_STEP2: FormStep2 = {
 };
 
 export function emptyStep3(): FormStep3 {
-  return { files: Array(7).fill(null) as (File | null)[], heroIdx: 0 };
+  return {
+    files: Array(7).fill(null) as (File | null)[],
+    heroIdx: 0,
+    uploadedUrls: Array(7).fill(null) as (string | null)[],
+  };
 }

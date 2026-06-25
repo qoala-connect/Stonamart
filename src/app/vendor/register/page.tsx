@@ -1,19 +1,16 @@
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { VendorRegisterForm } from "@/components/auth/VendorRegisterForm";
 import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Vendor Registration — Stonamart",
-  description: "Register your stone business on Stonamart and reach thousands of buyers across India.",
-};
-
+export const metadata: Metadata = { title: "Vendor Portal — Stonamart" };
 export default function VendorRegisterPage() {
   return (
     <AuthLayout
-      headline={"Reach buyers\nacross India\nwith Stonamart."}
-      subline="List your granite, marble, and natural stone inventory and get discovered by architects, designers, and developers who trust Stonamart."
-      quote="Your stone finds its buyer when quality meets visibility."
-      quoteAttrib="Stonamart Partner Program"
+      headline="Vendor Portal"
+      subline="Manage your products, orders and business all in one place."
+      panelPhoto="https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?w=1200&q=85"
+      panelFeatures={["Manage Products","Track Orders","Grow Your Business"]}
+      panelTheme="dark"
+      panelAccent="#B8865A"
     >
       <VendorRegisterForm />
     </AuthLayout>

@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LogIn, ShieldCheck, Eye, EyeOff, AlertCircle, KeyRound,
-  CheckCircle2, Lock,
+  CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
 import { loginAction } from "@/lib/auth-actions";
@@ -17,12 +17,12 @@ type Tab = "signin" | "setup";
 // ─── Submit helpers ───────────────────────────────────────────────────────────
 function LoginSubmit() {
   const { pending } = useFormStatus();
-  return <SubmitButton pending={pending} label="Sign In" pendingLabel="Signing in…" />;
+  return <SubmitButton pending={pending} label="Sign In" pendingLabel="Authenticating…" />;
 }
 
 function SetupSubmit() {
   const { pending } = useFormStatus();
-  return <SubmitButton pending={pending} label="Create Admin Account" pendingLabel="Creating account…" />;
+  return <SubmitButton pending={pending} label="Initialize Admin" pendingLabel="Creating…" />;
 }
 
 // ─── Sign-in form ─────────────────────────────────────────────────────────────
@@ -31,26 +31,26 @@ function AdminLoginForm() {
   const [showPw, setShowPw] = useState(false);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <AnimatePresence>
         {state.error && (
           <motion.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-            className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200/60 rounded-xl"
+            className="flex items-center gap-3 p-4 bg-red-50 border border-red-200/60 rounded-xl"
           >
-            <AlertCircle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="font-sans text-[13px] text-red-700">{state.error}</p>
+            <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+            <p className="font-sans text-sm text-red-700">{state.error}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <form action={formAction} className="space-y-4">
-        <FormField label="Admin Email" error={state.fieldErrors?.email}>
+      <form action={formAction} className="space-y-5">
+        <FormField label="Admin ID" error={state.fieldErrors?.email}>
           <AuthInput type="email" name="email" placeholder="admin@stonamart.com"
             autoComplete="email" error={!!state.fieldErrors?.email} required />
         </FormField>
 
-        <FormField label="Password" error={state.fieldErrors?.password}>
+        <FormField label="Passkey" error={state.fieldErrors?.password}>
           <div className="relative">
             <AuthInput
               type={showPw ? "text" : "password"} name="password" placeholder="••••••••"
@@ -58,7 +58,7 @@ function AdminLoginForm() {
               className="pr-12" required
             />
             <button type="button" onClick={() => setShowPw((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors">
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/70 transition-colors">
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
@@ -66,29 +66,20 @@ function AdminLoginForm() {
 
         <div className="flex justify-end">
           <Link href="/forgot-password"
-            className="text-[12px] font-sans text-amber-gold hover:text-amber-gold/70 transition-colors font-medium">
-            Forgot password?
+            className="text-xs font-sans text-[#B8865A]/70 hover:text-[#B8865A] transition-colors font-semibold tracking-wide uppercase">
+            Recover Access
           </Link>
         </div>
 
         <LoginSubmit />
       </form>
-
-      {/* Security note */}
-      <div className="flex items-start gap-2.5 p-3.5 rounded-xl"
-        style={{ background: "rgba(201,169,97,0.06)", border: "1px solid rgba(201,169,97,0.16)" }}>
-        <Lock size={13} className="text-amber-gold flex-shrink-0 mt-0.5" />
-        <p className="font-sans text-[11.5px] text-stone-dark/52 leading-relaxed">
-          Admin access is restricted. Unauthorized login attempts are logged and monitored.
-        </p>
-      </div>
     </div>
   );
 }
 
 // ─── Setup / Register form ────────────────────────────────────────────────────
 function AdminSetupForm() {
-  const [state, formAction, isPending] = useActionState(adminSetupAction, {});
+  const [state, formAction] = useActionState(adminSetupAction, {});
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -96,34 +87,20 @@ function AdminSetupForm() {
   const [confirmError, setConfirmError] = useState("");
 
   return (
-    <div className="space-y-5">
-      {/* Info banner */}
-      <div className="p-4 rounded-xl"
-        style={{ background: "linear-gradient(135deg, rgba(201,169,97,0.08) 0%, rgba(201,169,97,0.04) 100%)", border: "1px solid rgba(201,169,97,0.22)" }}>
-        <div className="flex items-center gap-2 mb-2">
-          <ShieldCheck size={14} className="text-amber-gold" />
-          <p className="font-sans text-[11.5px] font-bold text-amber-700 uppercase tracking-wider">
-            First-time setup only
-          </p>
-        </div>
-        <p className="font-sans text-[11.5px] text-stone-dark/55 leading-relaxed">
-          This form creates the <strong className="text-stone-950">initial admin account</strong>. It becomes unavailable once an admin exists. You need the <strong className="text-stone-950">setup key</strong> to proceed.
-        </p>
-      </div>
-
+    <div className="space-y-6">
       <AnimatePresence>
         {state?.error && (
           <motion.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-            className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200/60 rounded-xl"
+            className="flex items-center gap-3 p-4 bg-red-50 border border-red-200/60 rounded-xl"
           >
-            <AlertCircle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="font-sans text-[13px] text-red-700">{state.error}</p>
+            <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+            <p className="font-sans text-sm text-red-700">{state.error}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <form action={formAction} className="space-y-4" onSubmit={(e) => {
+      <form action={formAction} className="space-y-5" onSubmit={(e) => {
         if (password !== confirmPassword) {
           e.preventDefault();
           setConfirmError("Passwords do not match");
@@ -131,25 +108,24 @@ function AdminSetupForm() {
           setConfirmError("");
         }
       }}>
-        {/* Setup key */}
-        <FormField label="Setup Key">
+        <FormField label="Authorization Key">
           <div className="relative">
-            <KeyRound size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30" />
-            <AuthInput name="setupKey" type="text" placeholder="stonamart-setup-2024"
-              className="pl-9" required />
+            <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-dark/30" />
+            <AuthInput name="setupKey" type="text" placeholder="Enter root setup key"
+              className="pl-11" required />
           </div>
         </FormField>
 
-        <FormField label="Full Name">
-          <AuthInput name="name" type="text" placeholder="Admin name" autoComplete="name" required />
+        <FormField label="Administrator Name">
+          <AuthInput name="name" type="text" placeholder="Full name" autoComplete="name" required />
         </FormField>
 
-        <FormField label="Email Address">
-          <AuthInput name="email" type="email" placeholder="admin@stonamart.com"
+        <FormField label="Secure Email">
+          <AuthInput name="email" type="email" placeholder="admin@domain.com"
             autoComplete="email" required />
         </FormField>
 
-        <FormField label="Password">
+        <FormField label="Master Password">
           <div className="relative">
             <AuthInput
               name="password" type={showPwd ? "text" : "password"}
@@ -159,13 +135,13 @@ function AdminSetupForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
             <button type="button" onClick={() => setShowPwd((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors">
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/70 transition-colors">
               {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </FormField>
 
-        <FormField label="Confirm Password" error={confirmError}>
+        <FormField label="Verify Password" error={confirmError}>
           <div className="relative">
             <AuthInput
               type={showConfirmPwd ? "text" : "password"}
@@ -177,33 +153,21 @@ function AdminSetupForm() {
               error={!!confirmError}
             />
             <button type="button" onClick={() => setShowConfirmPwd((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/60 transition-colors">
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-dark/30 hover:text-stone-dark/70 transition-colors">
               {showConfirmPwd ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
           {confirmPassword && confirmPassword === password && (
-            <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1">
-              <CheckCircle2 size={11} /> Passwords match
+            <p className="flex items-center gap-1.5 text-xs text-[#B8865A] mt-2 font-medium tracking-wide">
+              <CheckCircle2 size={12} /> Verified match
             </p>
           )}
         </FormField>
 
-        <SetupSubmit />
+        <div className="pt-2">
+          <SetupSubmit />
+        </div>
       </form>
-
-      {/* Checklist */}
-      <div className="space-y-2">
-        {[
-          "Setup key is provided in your deployment config",
-          "Only one admin account can be created this way",
-          "Additional admins can be added from the dashboard",
-        ].map((item) => (
-          <div key={item} className="flex items-start gap-2">
-            <CheckCircle2 size={12} className="text-amber-gold flex-shrink-0 mt-0.5" />
-            <p className="font-sans text-[11.5px] text-stone-dark/50 leading-relaxed">{item}</p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -213,73 +177,68 @@ export function AdminAuthTabs({ defaultTab = "signin" }: { defaultTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(defaultTab);
 
   return (
-    <div className="space-y-7">
-      {/* Header */}
-      <div>
-        <p className="text-[10px] font-sans font-bold text-amber-gold/70 uppercase tracking-[0.22em] mb-2">
-          Admin Portal
-        </p>
-        <h2 className="font-serif text-[1.85rem] font-bold text-stone-950 leading-tight tracking-tight">
-          {tab === "signin" ? "Welcome back" : "Admin Setup"}
+    <div className="space-y-8 w-full">
+      
+      {/* Sleek Header */}
+      <div className="text-center">
+        <h2 className="font-serif text-3xl font-bold text-stone-950 tracking-tight">
+          {tab === "signin" ? "Admin Access" : "System Setup"}
         </h2>
-        <p className="mt-1.5 font-sans text-[13.5px] text-stone-dark/45 leading-relaxed">
+        <p className="mt-2 font-sans text-sm text-stone-dark/40 tracking-wide">
           {tab === "signin"
-            ? "Sign in to access the admin operations portal."
-            : "Create the initial administrator account."}
+            ? "Enter credentials to access operations."
+            : "Initialize the primary root account."}
         </p>
-        <div className="mt-4 h-px bg-gradient-to-r from-amber-gold/30 via-stone-dark/8 to-transparent" />
       </div>
 
-      {/* Tab switcher */}
-      <div className="relative flex rounded-2xl p-1 gap-1"
-        style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.07)" }}>
+      {/* Luxury Tab Switcher */}
+      <div className="relative flex rounded-xl p-1 bg-cream-100 border border-stone-dark/10">
         {([
           { id: "signin", label: "Sign In",      icon: LogIn       },
-          { id: "setup",  label: "Admin Setup",  icon: ShieldCheck },
+          { id: "setup",  label: "Initialize",   icon: ShieldCheck },
         ] as { id: Tab; label: string; icon: React.FC<{ size?: number; className?: string }> }[]).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="relative flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-sans text-[13px] font-semibold transition-colors duration-200 z-10"
-            style={{ color: tab === t.id ? "#0a0a0a" : "rgba(10,10,10,0.40)" }}>
+            className="relative flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-sans text-sm font-semibold transition-colors duration-300 z-10 uppercase tracking-widest"
+            style={{ color: tab === t.id ? "#B8865A" : "rgba(58,47,38,0.45)" }}>
             {tab === t.id && (
               <motion.div layoutId="admin-tab-bg"
-                className="absolute inset-0 rounded-xl bg-white"
-                style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(201,169,97,0.20)" }}
-                transition={{ type: "spring", stiffness: 420, damping: 36 }} />
+                className="absolute inset-0 rounded-lg bg-white border border-amber-gold/30 shadow-luxury"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }} />
             )}
-            <t.icon size={13} className="relative z-10 flex-shrink-0" />
+            <t.icon size={14} className="relative z-10 flex-shrink-0" />
             <span className="relative z-10 whitespace-nowrap">{t.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Form panel */}
+      {/* Form Panel */}
       <AnimatePresence mode="wait">
         <motion.div
           key={tab}
-          initial={{ opacity: 0, x: tab === "signin" ? -16 : 16, filter: "blur(4px)" }}
-          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, x: tab === "signin" ? 16 : -16, filter: "blur(4px)" }}
-          transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+          initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
+          transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           {tab === "signin" ? (
-            <div className="space-y-5">
+            <div className="space-y-6">
               <AdminLoginForm />
-              <p className="font-sans text-[12.5px] text-stone-dark/42 text-center">
-                First time here?{" "}
+              <p className="font-sans text-xs text-stone-dark/30 text-center tracking-wide uppercase">
+                First time?{" "}
                 <button type="button" onClick={() => setTab("setup")}
-                  className="text-amber-gold font-semibold hover:text-amber-gold/75 transition-colors">
-                  Run admin setup
+                  className="text-[#B8865A]/80 font-bold hover:text-[#B8865A] transition-colors ml-1">
+                  Run Setup
                 </button>
               </p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-6">
               <AdminSetupForm />
-              <p className="font-sans text-[12.5px] text-stone-dark/42 text-center">
-                Already set up?{" "}
+              <p className="font-sans text-xs text-stone-dark/30 text-center tracking-wide uppercase">
+                Already initialized?{" "}
                 <button type="button" onClick={() => setTab("signin")}
-                  className="text-amber-gold font-semibold hover:text-amber-gold/75 transition-colors">
-                  Sign in here
+                  className="text-[#B8865A]/80 font-bold hover:text-[#B8865A] transition-colors ml-1">
+                  Sign In
                 </button>
               </p>
             </div>

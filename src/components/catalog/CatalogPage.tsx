@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/ui";
 import { FilterSidebar } from "./FilterSidebar";
 import { SortingHeader } from "./SortingHeader";
-import Link from "next/link";
 import { CatalogProductCard } from "./CatalogProductCard";
 import { CatalogProductListItem } from "./CatalogProductListItem";
 import dynamic from "next/dynamic";
@@ -348,9 +347,9 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
                 >
                   <Search size={12} className="text-amber-gold" />
                   <span>Results for <strong className="text-white">&ldquo;{textQuery}&rdquo;</strong></span>
-                  <Link href="/products" className="text-white/40 hover:text-white transition-colors ml-1">
+                  <a href="/products" className="text-white/40 hover:text-white transition-colors ml-1">
                     <X size={11} />
-                  </Link>
+                  </a>
                 </motion.div>
               )}
             </div>

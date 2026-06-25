@@ -220,7 +220,7 @@ export function CatalogProductCard({
                 className="flex items-center gap-1 px-3 py-1.5 border border-stone-dark/12 rounded-xl text-xs font-sans font-medium text-stone-dark/60 hover:border-amber-gold/40 hover:text-amber-gold transition-all duration-200"
                 variants={{
                   rest: {},
-                  hover: { borderColor: "rgba(201,169,97,0.5)", color: "#c9a961" },
+                  hover: { borderColor: "rgba(184,134,90,0.5)", color: "#B8865A" },
                 }}
               >
                 Quote

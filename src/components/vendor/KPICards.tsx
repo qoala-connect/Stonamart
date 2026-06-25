@@ -2,16 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Layers, Clock, CheckCircle2, XCircle, Eye } from "lucide-react";
+import { Layers, Clock, CheckCircle2, XCircle, Eye, TrendingUp } from "lucide-react";
 import type { VendorListing } from "./types";
 
-// Counts up from 0 to target on mount
 function Counter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
   useEffect(() => {
     if (target === 0) return;
-    const steps = 28;
-    const ms = 900 / steps;
+    const steps = 30;
+    const ms = 800 / steps;
     let i = 0;
     const id = setInterval(() => {
       i++;
@@ -23,110 +22,111 @@ function Counter({ target }: { target: number }) {
   return <>{val.toLocaleString()}</>;
 }
 
-interface CardConfig {
+interface CardCfg {
   label: string;
   desc: string;
   icon: React.ElementType;
-  iconBg: string;
+  accentColor: string;
+  bgColor: string;
   iconColor: string;
-  accentBar: string;
-  getValue: (listings: VendorListing[]) => number;
-  format?: (n: number) => string;
+  trend: string;
+  trendUp: boolean;
+  getValue: (l: VendorListing[]) => number;
 }
 
-const CARDS: CardConfig[] = [
+const CARDS: CardCfg[] = [
   {
     label: "Total Listings",
-    desc: "All stones submitted",
+    desc: "All submitted",
     icon: Layers,
-    iconBg: "bg-stone-dark/7",
-    iconColor: "text-stone-dark/60",
-    accentBar: "bg-stone-dark/18",
+    accentColor: "bg-stone-900",
+    bgColor: "bg-stone-50",
+    iconColor: "text-stone-600",
+    trend: "+12.4%",
+    trendUp: true,
     getValue: (l) => l.length,
   },
   {
     label: "Pending Review",
-    desc: "Awaiting admin approval",
+    desc: "Awaiting approval",
     icon: Clock,
-    iconBg: "bg-amber-500/10",
+    accentColor: "bg-amber-500",
+    bgColor: "bg-amber-50",
     iconColor: "text-amber-600",
-    accentBar: "bg-amber-400",
+    trend: "-5.2%",
+    trendUp: false,
     getValue: (l) => l.filter((x) => x.status === "PENDING_APPROVAL").length,
   },
   {
     label: "Approved",
     desc: "Live on marketplace",
     icon: CheckCircle2,
-    iconBg: "bg-emerald-500/10",
+    accentColor: "bg-emerald-500",
+    bgColor: "bg-emerald-50",
     iconColor: "text-emerald-600",
-    accentBar: "bg-emerald-500",
+    trend: "+18.7%",
+    trendUp: true,
     getValue: (l) => l.filter((x) => x.status === "APPROVED").length,
   },
   {
     label: "Rejected",
     desc: "Did not pass review",
     icon: XCircle,
-    iconBg: "bg-red-500/10",
+    accentColor: "bg-red-500",
+    bgColor: "bg-red-50",
     iconColor: "text-red-500",
-    accentBar: "bg-red-500",
+    trend: "-8.1%",
+    trendUp: false,
     getValue: (l) => l.filter((x) => x.status === "REJECTED").length,
   },
   {
     label: "Total Views",
-    desc: "Across all live listings",
+    desc: "Across all listings",
     icon: Eye,
-    iconBg: "bg-blue-500/10",
+    accentColor: "bg-blue-500",
+    bgColor: "bg-blue-50",
     iconColor: "text-blue-500",
-    accentBar: "bg-blue-500",
+    trend: "+24.3%",
+    trendUp: true,
     getValue: (l) => l.reduce((s, x) => s + x.views, 0),
   },
 ];
 
-interface KPICardsProps {
-  listings: VendorListing[];
-}
-
-export function KPICards({ listings }: KPICardsProps) {
+export function KPICards({ listings }: { listings: VendorListing[] }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-      {CARDS.map((card, i) => {
-        const Icon = card.icon;
-        const value = card.getValue(listings);
+      {CARDS.map((cfg, i) => {
+        const Icon = cfg.icon;
+        const value = cfg.getValue(listings);
         return (
           <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 18 }}
+            key={cfg.label}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: i * 0.07,
-              duration: 0.42,
-              ease: [0.25, 0.46, 0.45, 0.94],
-            }}
-            className="relative bg-white rounded-2xl border border-stone-dark/8 overflow-hidden hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-shadow duration-300"
+            transition={{ delay: i * 0.06, duration: 0.4 }}
+            className="bg-white rounded-xl border border-stone-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
           >
             {/* Top accent bar */}
-            <div className={`h-0.5 w-full ${card.accentBar}`} />
-
-            <div className="p-5">
-              {/* Icon */}
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center mb-4 ${card.iconBg}`}
-              >
-                <Icon size={16} className={card.iconColor} />
+            <div className={`h-1 w-full ${cfg.accentColor}`} />
+            <div className="p-4">
+              <div className={`w-9 h-9 rounded-lg ${cfg.bgColor} flex items-center justify-center mb-3`}>
+                <Icon size={16} className={cfg.iconColor} />
               </div>
-
-              {/* Value */}
-              <p className="font-serif text-3xl font-bold text-stone-950 leading-none mb-1.5">
+              <p className="font-serif text-2xl font-bold text-stone-950 leading-none mb-1">
                 <Counter target={value} />
               </p>
-
-              {/* Label */}
-              <p className="font-sans text-xs font-semibold text-stone-950 mb-0.5">
-                {card.label}
-              </p>
-              <p className="font-sans text-[10px] text-stone-dark/38">
-                {card.desc}
-              </p>
+              <p className="font-sans text-[11.5px] font-semibold text-stone-700 mb-0.5">{cfg.label}</p>
+              <p className="font-sans text-[10px] text-stone-400 mb-2">{cfg.desc}</p>
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-sans font-bold px-1.5 py-0.5 rounded ${
+                  cfg.trendUp
+                    ? "text-emerald-600 bg-emerald-50"
+                    : "text-red-500 bg-red-50"
+                }`}
+              >
+                <TrendingUp size={9} className={cfg.trendUp ? "" : "rotate-180"} />
+                {cfg.trend}
+              </span>
             </div>
           </motion.div>
         );

@@ -46,8 +46,8 @@ function StepDots({ current }: { current: number }) {
             <div className="flex flex-col items-center gap-1.5">
               <motion.div
                 animate={{
-                  backgroundColor: done ? "#c9a961" : active ? "#0a0a0a" : "transparent",
-                  borderColor: done ? "#c9a961" : active ? "#0a0a0a" : "#0a0a0a1a",
+                  backgroundColor: done ? "#B8865A" : active ? "#3a2f26" : "transparent",
+                  borderColor: done ? "#B8865A" : active ? "#3a2f26" : "#3a2f261a",
                 }}
                 transition={{ duration: 0.25 }}
                 className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
@@ -64,7 +64,7 @@ function StepDots({ current }: { current: number }) {
             </div>
             {i < STEPS.length - 1 && (
               <motion.div
-                animate={{ backgroundColor: done ? "#c9a961" : "#0a0a0a12" }}
+                animate={{ backgroundColor: done ? "#B8865A" : "#3a2f2612" }}
                 transition={{ duration: 0.3 }}
                 className="h-px flex-1 mx-2 mb-4 min-w-[12px]"
               />

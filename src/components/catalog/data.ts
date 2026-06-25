@@ -125,6 +125,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Italy",
     bg: BG.calacattaOro,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?w=800&q=82",
   },
   {
     id: "c2",
@@ -144,6 +145,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Norway",
     bg: BG.blackAbsolute,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?w=800&q=82",
   },
   {
     id: "c3",
@@ -163,6 +165,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "USA",
     bg: BG.stellarWhite,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1726987242665-d0a7d2268ea0?w=800&q=82",
   },
   {
     id: "c4",
@@ -182,6 +185,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Spain",
     bg: BG.emperadorDark,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1722605090433-41d1183a792d?w=800&q=82",
   },
   {
     id: "c5",
@@ -201,6 +205,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "India",
     bg: BG.sunsetGold,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1554755229-ca4470e07232?w=800&q=82",
   },
   {
     id: "c6",
@@ -220,6 +225,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Mexico",
     bg: BG.deepOnyx,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?w=800&q=82",
   },
   {
     id: "c7",
@@ -239,6 +245,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Italy",
     bg: BG.biancoCarrara,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?w=800&q=82",
   },
   {
     id: "c8",
@@ -258,6 +265,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "India",
     bg: BG.kashmirWhite,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1704530953106-9cdd4342dd36?w=800&q=82",
   },
   {
     id: "c9",
@@ -277,6 +285,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Spain",
     bg: BG.cremaMarfil,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1633119713175-c53c29479984?w=800&q=82",
   },
   {
     id: "c10",
@@ -296,6 +305,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Guatemala",
     bg: BG.verdeGuatemala,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1639405069836-f82aa6dcb900?w=800&q=82",
   },
   {
     id: "c11",
@@ -315,6 +325,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Turkey",
     bg: BG.travertine,
     textLight: false,
+    imageUrl: "/images/travertine.webp",
   },
   {
     id: "c12",
@@ -334,6 +345,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Finland",
     bg: BG.balticBrown,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1733085097233-66441dedba94?w=800&q=82",
   },
   {
     id: "c13",
@@ -353,6 +365,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "India",
     bg: BG.fantasyBrown,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1726987242665-d0a7d2268ea0?w=800&q=82",
   },
   {
     id: "c14",
@@ -372,6 +385,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Spain",
     bg: BG.neroMarquina,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1639405069836-f82aa6dcb900?w=800&q=82",
   },
   {
     id: "c15",
@@ -391,6 +405,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "USA",
     bg: BG.desertSand,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1554755229-ca4470e07232?w=800&q=82",
   },
   {
     id: "c16",
@@ -410,6 +425,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "India",
     bg: BG.rainforestGreen,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1704530953106-9cdd4342dd36?w=800&q=82",
   },
   {
     id: "c17",
@@ -429,6 +445,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "India",
     bg: BG.jaisalmerYellow,
     textLight: false,
+    imageUrl: "/images/granite.jpg",
   },
   {
     id: "c18",
@@ -448,6 +465,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Norway",
     bg: BG.iceBlue,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?w=800&q=82",
   },
   {
     id: "c19",
@@ -467,6 +485,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Portugal",
     bg: BG.rosaPortogallo,
     textLight: false,
+    imageUrl: "https://images.unsplash.com/photo-1733085097233-66441dedba94?w=800&q=82",
   },
   {
     id: "c20",
@@ -486,6 +505,7 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     origin: "Finland",
     bg: BG.blackForest,
     textLight: true,
+    imageUrl: "https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?w=800&q=82",
   },
 ];
 

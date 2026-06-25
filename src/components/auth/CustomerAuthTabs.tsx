@@ -28,14 +28,14 @@ export function CustomerAuthTabs({ defaultTab = "signin" }: { defaultTab?: Tab }
             onClick={() => setTab(t.id)}
             className="relative flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-sans text-[13px] font-semibold transition-colors duration-200 z-10"
             style={{
-              color: tab === t.id ? "#0a0a0a" : "rgba(10,10,10,0.40)",
+              color: tab === t.id ? "#3a2f26" : "rgba(58,47,38,0.40)",
             }}
           >
             {tab === t.id && (
               <motion.div
                 layoutId="tab-bg"
                 className="absolute inset-0 rounded-xl bg-white"
-                style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(201,169,97,0.20)" }}
+                style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(184,134,90,0.20)" }}
                 transition={{ type: "spring", stiffness: 420, damping: 36 }}
               />
             )}
@@ -47,7 +47,7 @@ export function CustomerAuthTabs({ defaultTab = "signin" }: { defaultTab?: Tab }
 
       {/* Amber underline accent */}
       <div className="h-px"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(201,169,97,0.35) 30%, rgba(201,169,97,0.55) 50%, rgba(201,169,97,0.35) 70%, transparent)" }} />
+        style={{ background: "linear-gradient(90deg, transparent, rgba(184,134,90,0.35) 30%, rgba(184,134,90,0.55) 50%, rgba(184,134,90,0.35) 70%, transparent)" }} />
 
       {/* Form panel */}
       <AnimatePresence mode="wait">

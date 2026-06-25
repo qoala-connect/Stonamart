@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -16,6 +16,10 @@ import {
   Send,
   ArrowLeft,
   ArrowRight,
+  Loader2,
+  Play,
+  Maximize2,
+  AlertCircle,
 } from "lucide-react";
 import { FORM_OPTIONS } from "./data";
 import type {
@@ -23,10 +27,9 @@ import type {
   FormStep2,
   FormStep3,
   UnitType,
-  EMPTY_STEP1,
-  EMPTY_STEP2,
 } from "./types";
 import { emptyStep3 } from "./types";
+import { getVideoUploadUrl, getImageUploadUrl } from "@/lib/vendor-actions";
 
 // ─── Shared field styles ──────────────────────────────────────────────────────
 const inputCls =
@@ -113,9 +116,9 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
                   backgroundColor: done
                     ? "#10b981"
                     : active
-                    ? "#c9a961"
+                    ? "#B8865A"
                     : "transparent",
-                  borderColor: done ? "#10b981" : active ? "#c9a961" : "rgba(10,10,10,0.18)",
+                  borderColor: done ? "#10b981" : active ? "#B8865A" : "rgba(58,47,38,0.18)",
                 }}
                 className="w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0"
               >
@@ -159,50 +162,167 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
   );
 }
 
+// ─── Image fullscreen preview modal ──────────────────────────────────────────
+function ImagePreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-black/85 flex items-center justify-center p-4 cursor-zoom-out"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ duration: 0.22 }}
+        className="relative max-w-4xl max-h-[88vh] flex items-center justify-center cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt="Preview"
+          className="max-w-full max-h-[88vh] object-contain rounded-2xl shadow-2xl"
+        />
+        <button
+          onClick={onClose}
+          className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
+        >
+          <X size={14} className="text-gray-700" />
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Video preview modal ──────────────────────────────────────────────────────
+function VideoPreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ duration: 0.22 }}
+        className="relative w-full max-w-3xl cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <video
+          src={url}
+          controls
+          autoPlay
+          className="w-full rounded-2xl bg-black shadow-2xl"
+          style={{ maxHeight: "75vh" }}
+        />
+        <button
+          onClick={onClose}
+          className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors"
+        >
+          <X size={14} className="text-gray-700" />
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── Media slot ───────────────────────────────────────────────────────────────
+type UploadState = "idle" | "uploading" | "done" | "error";
+
 function MediaSlot({
   idx,
   isVideo,
   file,
   objectUrl,
+  uploadState,
   isHero,
   onSelect,
   onClear,
   onSetHero,
+  onPreview,
 }: {
   idx: number;
   isVideo: boolean;
   file: File | null;
   objectUrl: string | null;
+  uploadState: UploadState;
   isHero: boolean;
   onSelect: () => void;
   onClear: () => void;
   onSetHero: () => void;
+  onPreview: () => void;
 }) {
   const hasFile = file !== null;
+  const isUploading = uploadState === "uploading";
+  const isDone = uploadState === "done";
+  const isError = uploadState === "error";
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
+      {/* Slot tile */}
       <div
         className={`relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-200 ${
           hasFile
-            ? isHero
-              ? "border-amber-gold shadow-[0_0_0_3px_rgba(201,169,97,0.18)]"
-              : "border-stone-dark/12 hover:border-stone-dark/22"
-            : "border-dashed border-stone-dark/15 hover:border-amber-gold/40 hover:bg-cream-100"
+            ? isError
+              ? "border-red-400/60"
+              : isDone
+              ? isHero
+                ? "border-amber-gold shadow-[0_0_0_3px_rgba(184,134,90,0.18)]"
+                : "border-emerald-400/50"
+              : "border-stone-dark/12"
+            : "border-dashed border-stone-dark/15 hover:border-amber-gold/40 hover:bg-amber-gold/4"
         }`}
         style={{ aspectRatio: "1/1" }}
-        onClick={hasFile ? undefined : onSelect}
+        onClick={!hasFile ? onSelect : objectUrl ? onPreview : undefined}
       >
         {hasFile ? (
           <>
-            {/* Preview */}
+            {/* Content */}
             {isVideo ? (
-              <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
-                <Film size={20} className="text-amber-gold/70" />
-                <p className="absolute bottom-2 left-0 right-0 text-center text-[9px] font-sans text-stone-light/50 truncate px-2">
-                  {file!.name}
-                </p>
+              <div className="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center gap-1">
+                {isDone ? (
+                  <div
+                    onClick={(e) => { e.stopPropagation(); onPreview(); }}
+                    className="w-9 h-9 bg-amber-gold/90 rounded-full flex items-center justify-center hover:bg-amber-gold transition-colors cursor-pointer"
+                  >
+                    <Play size={15} fill="white" className="text-white ml-0.5" />
+                  </div>
+                ) : (
+                  <Film
+                    size={18}
+                    className={
+                      isUploading
+                        ? "text-amber-400"
+                        : isError
+                        ? "text-red-400"
+                        : "text-gray-500"
+                    }
+                  />
+                )}
+                {file && (
+                  <p className="absolute bottom-1 left-0 right-0 text-center text-[7px] font-sans text-white/35 truncate px-1">
+                    {file.name}
+                  </p>
+                )}
               </div>
             ) : objectUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -212,36 +332,55 @@ function MediaSlot({
                 className="absolute inset-0 w-full h-full object-cover"
               />
             ) : (
-              <div className="absolute inset-0 bg-stone-dark/8 flex items-center justify-center">
-                <ImageIcon size={18} className="text-stone-dark/40" />
+              <div className="absolute inset-0 bg-stone-100 flex items-center justify-center">
+                <ImageIcon size={16} className="text-stone-300" />
               </div>
             )}
 
-            {/* Hero crown */}
-            {isHero && (
-              <div className="absolute top-1.5 left-1.5 w-5 h-5 bg-amber-gold rounded-full flex items-center justify-center shadow">
-                <Star size={9} fill="white" className="text-white" />
+            {/* Hover preview hint for images */}
+            {!isVideo && objectUrl && (
+              <div className="absolute inset-0 bg-black/0 hover:bg-black/25 transition-colors flex items-center justify-center opacity-0 hover:opacity-100 pointer-events-none">
+                <Maximize2 size={14} className="text-white drop-shadow-md" />
+              </div>
+            )}
+
+            {/* Upload spinner overlay */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/45 flex items-center justify-center pointer-events-none">
+                <Loader2 size={16} className="text-white animate-spin" />
+              </div>
+            )}
+
+            {/* Status badge (top-right) */}
+            {isDone && !isHero && (
+              <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shadow pointer-events-none">
+                <Check size={8} strokeWidth={3} className="text-white" />
+              </div>
+            )}
+            {isError && (
+              <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center shadow pointer-events-none">
+                <X size={8} strokeWidth={3} className="text-white" />
+              </div>
+            )}
+
+            {/* Hero badge (top-left) */}
+            {isHero && isDone && (
+              <div className="absolute top-1 left-1 w-4 h-4 bg-amber-gold rounded-full flex items-center justify-center shadow pointer-events-none">
+                <Star size={7} fill="white" className="text-white" />
               </div>
             )}
 
             {/* Remove button */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onClear();
-              }}
-              className="absolute top-1.5 right-1.5 w-5 h-5 bg-gray-700/70 hover:bg-gray-700/90 rounded-full flex items-center justify-center text-white transition-colors"
+              onClick={(e) => { e.stopPropagation(); onClear(); }}
+              className="absolute bottom-1 right-1 w-5 h-5 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors z-10"
             >
               <X size={9} />
             </button>
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-stone-dark/30">
-            {isVideo ? (
-              <Film size={18} />
-            ) : (
-              <UploadCloud size={18} />
-            )}
+            {isVideo ? <Film size={16} /> : <UploadCloud size={16} />}
             <span className="text-[9px] font-sans font-medium text-center px-1 leading-tight">
               {isVideo ? "Video" : `Image ${idx + 1}`}
             </span>
@@ -249,20 +388,29 @@ function MediaSlot({
         )}
       </div>
 
-      {/* Set hero button (image slots only) */}
-      {!isVideo && hasFile && !isHero && (
-        <button
-          onClick={onSetHero}
-          className="text-[9px] font-sans font-medium text-stone-dark/40 hover:text-amber-gold transition-colors text-center leading-none"
-        >
-          Set hero
-        </button>
-      )}
-      {isHero && hasFile && (
-        <p className="text-[9px] font-sans font-semibold text-amber-gold text-center leading-none">
-          ★ Hero
-        </p>
-      )}
+      {/* Status / hero label row */}
+      <div className="min-h-[14px] flex flex-col items-center justify-center">
+        {hasFile && isUploading && (
+          <p className="text-[8px] font-sans text-amber-600 leading-none">Uploading…</p>
+        )}
+        {hasFile && isDone && isVideo && (
+          <p className="text-[8px] font-sans text-emerald-600 leading-none">✓ Uploaded</p>
+        )}
+        {hasFile && isError && (
+          <p className="text-[8px] font-sans text-red-500 leading-none">✕ Failed</p>
+        )}
+        {hasFile && isDone && !isVideo && !isHero && (
+          <button
+            onClick={onSetHero}
+            className="text-[8px] font-sans font-medium text-stone-dark/38 hover:text-amber-gold transition-colors leading-none"
+          >
+            Set hero
+          </button>
+        )}
+        {hasFile && isDone && !isVideo && isHero && (
+          <p className="text-[8px] font-sans font-semibold text-amber-gold leading-none">★ Hero</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -365,14 +513,13 @@ export function ProductSubmissionForm({
   editListing,
 }: ProductSubmissionFormProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [step1, setStep1] = useState<FormStep1>(
-    editListing?.step1 ?? INITIAL_STEP1
-  );
-  const [step2, setStep2] = useState<FormStep2>(
-    editListing?.step2 ?? INITIAL_STEP2
-  );
+  const [step1, setStep1] = useState<FormStep1>(editListing?.step1 ?? INITIAL_STEP1);
+  const [step2, setStep2] = useState<FormStep2>(editListing?.step2 ?? INITIAL_STEP2);
   const [step3, setStep3] = useState<FormStep3>(emptyStep3());
   const [objectUrls, setObjectUrls] = useState<(string | null)[]>(Array(7).fill(null));
+  const [uploadStates, setUploadStates] = useState<UploadState[]>(Array(7).fill("idle"));
+  const [uploadErrors, setUploadErrors] = useState<(string | null)[]>(Array(7).fill(null));
+  const [previewSlot, setPreviewSlot] = useState<number | null>(null);
   const [aiStatus, setAiStatus] = useState<"idle" | "processing" | "done">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<SubmitAction | null>(null);
@@ -387,13 +534,21 @@ export function ProductSubmissionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync editListing into form state when it changes
+  // Sync editListing into form state + reset media state
   useEffect(() => {
     if (editListing) {
       setStep1(editListing.step1);
       setStep2(editListing.step2);
       setStep(1);
+      // Reset media entirely when switching to a different edit session
+      objectUrls.forEach((u) => u && URL.revokeObjectURL(u));
+      setObjectUrls(Array(7).fill(null));
+      setStep3(emptyStep3());
+      setUploadStates(Array(7).fill("idle"));
+      setUploadErrors(Array(7).fill(null));
+      setPreviewSlot(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editListing]);
 
   function triggerAI() {
@@ -402,40 +557,84 @@ export function ProductSubmissionForm({
     aiTimerRef.current = setTimeout(() => setAiStatus("done"), 2600);
   }
 
-  function handleFileSelect(slotIdx: number, file: File) {
-    // Revoke old URL
+  // Upload a file immediately when selected and track per-slot status
+  async function handleFileSelect(slotIdx: number, file: File) {
+    // Revoke the previous object URL for this slot (if any)
     if (objectUrls[slotIdx]) URL.revokeObjectURL(objectUrls[slotIdx]!);
-    const url = slotIdx < 6 ? URL.createObjectURL(file) : null;
+    const objUrl = URL.createObjectURL(file); // works for both images and video
 
-    setObjectUrls((prev) => {
-      const next = [...prev];
-      next[slotIdx] = url;
-      return next;
-    });
+    setObjectUrls((prev) => { const n = [...prev]; n[slotIdx] = objUrl; return n; });
     setStep3((prev) => {
       const files = [...prev.files] as (File | null)[];
       files[slotIdx] = file;
-      return { ...prev, files };
+      const uploadedUrls = [...prev.uploadedUrls];
+      uploadedUrls[slotIdx] = null; // clear old URL while re-uploading
+      return { ...prev, files, uploadedUrls };
     });
+    setUploadStates((prev) => { const n = [...prev]; n[slotIdx] = "uploading"; return n; });
+    setUploadErrors((prev) => { const n = [...prev]; n[slotIdx] = null; return n; });
+
     if (slotIdx < 6) triggerAI();
+
+    try {
+      let uploadedUrl: string | null = null;
+
+      if (slotIdx === 6) {
+        // Video — browser uploads directly to Supabase (no server relay)
+        const res = await getVideoUploadUrl(file.name, file.type);
+        if ("error" in res) throw new Error(res.error);
+        const put = await fetch(res.signedUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type || "video/mp4" },
+        });
+        if (!put.ok) throw new Error(`Upload failed (${put.status})`);
+        uploadedUrl = res.publicUrl;
+      } else {
+        // Image — browser uploads directly to Supabase (no server relay)
+        const res = await getImageUploadUrl(file.name, file.type);
+        if ("error" in res) throw new Error(res.error);
+        const put = await fetch(res.signedUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type || "image/jpeg" },
+        });
+        if (!put.ok) throw new Error(`Upload failed (${put.status})`);
+        uploadedUrl = res.publicUrl;
+      }
+
+      // Guard: only update if this file is still the one in the slot
+      setStep3((prev) => {
+        if (prev.files[slotIdx] !== file) return prev;
+        const uploadedUrls = [...prev.uploadedUrls];
+        uploadedUrls[slotIdx] = uploadedUrl;
+        return { ...prev, uploadedUrls };
+      });
+      setUploadStates((prev) => { const n = [...prev]; n[slotIdx] = "done"; return n; });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      setUploadStates((prev) => { const n = [...prev]; n[slotIdx] = "error"; return n; });
+      setUploadErrors((prev) => { const n = [...prev]; n[slotIdx] = msg; return n; });
+    }
   }
 
   function handleFileClear(slotIdx: number) {
     if (objectUrls[slotIdx]) URL.revokeObjectURL(objectUrls[slotIdx]!);
-    setObjectUrls((prev) => {
-      const next = [...prev];
-      next[slotIdx] = null;
-      return next;
-    });
+    setObjectUrls((prev) => { const n = [...prev]; n[slotIdx] = null; return n; });
     setStep3((prev) => {
       const files = [...prev.files] as (File | null)[];
       files[slotIdx] = null;
+      const uploadedUrls = [...prev.uploadedUrls];
+      uploadedUrls[slotIdx] = null;
       const heroIdx =
         prev.heroIdx === slotIdx
-          ? files.findIndex((f) => f !== null && f !== prev.files[slotIdx])
+          ? files.findIndex((f) => f !== null)
           : prev.heroIdx;
-      return { ...prev, files, heroIdx: heroIdx < 0 ? 0 : heroIdx };
+      return { ...prev, files, uploadedUrls, heroIdx: heroIdx < 0 ? 0 : heroIdx };
     });
+    setUploadStates((prev) => { const n = [...prev]; n[slotIdx] = "idle"; return n; });
+    setUploadErrors((prev) => { const n = [...prev]; n[slotIdx] = null; return n; });
+    if (previewSlot === slotIdx) setPreviewSlot(null);
   }
 
   // ── Validation ──────────────────────────────────────────────────────────────
@@ -473,13 +672,22 @@ export function ProductSubmissionForm({
   }
 
   function handleAction(action: SubmitAction) {
+    // Block submit while any upload is in progress
+    const anyUploading = uploadStates.some((s) => s === "uploading");
+    if (anyUploading) {
+      setErrors({ media: "Please wait for all uploads to complete before submitting." });
+      return;
+    }
+
     if (action === "review" && step === 3) {
-      const hasImage = step3.files.slice(0, 6).some(Boolean);
-      if (!hasImage) {
-        setErrors({ media: "Upload at least one stone image" });
+      const hasUploadedImage = step3.uploadedUrls.slice(0, 6).some(Boolean);
+      // For new listings, require at least one uploaded image
+      if (!hasUploadedImage && !editListing) {
+        setErrors({ media: "Upload at least one stone image before submitting." });
         return;
       }
     }
+
     onSubmit(action, { step1, step2, step3 });
     setSubmitted(action);
     setTimeout(() => {
@@ -487,11 +695,18 @@ export function ProductSubmissionForm({
       setStep(1);
       setStep1(INITIAL_STEP1);
       setStep2(INITIAL_STEP2);
+      objectUrls.forEach((u) => u && URL.revokeObjectURL(u));
       setStep3(emptyStep3());
       setObjectUrls(Array(7).fill(null));
+      setUploadStates(Array(7).fill("idle"));
+      setUploadErrors(Array(7).fill(null));
+      setPreviewSlot(null);
       setAiStatus("idle");
     }, 2200);
   }
+
+  // Derived
+  const anyUploading = uploadStates.some((s) => s === "uploading");
 
   // ── Success state ───────────────────────────────────────────────────────────
   if (submitted) {
@@ -506,9 +721,7 @@ export function ProductSubmissionForm({
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 240, damping: 18 }}
           className={`w-16 h-16 rounded-full flex items-center justify-center mb-5 ${
-            submitted === "draft"
-              ? "bg-stone-dark/8"
-              : "bg-emerald-100"
+            submitted === "draft" ? "bg-stone-dark/8" : "bg-emerald-100"
           }`}
         >
           {submitted === "draft" ? (
@@ -531,6 +744,25 @@ export function ProductSubmissionForm({
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Image / video preview modals */}
+      <AnimatePresence>
+        {previewSlot !== null && objectUrls[previewSlot] && (
+          previewSlot === 6 ? (
+            <VideoPreviewModal
+              key="video-preview"
+              url={objectUrls[previewSlot]!}
+              onClose={() => setPreviewSlot(null)}
+            />
+          ) : (
+            <ImagePreviewModal
+              key="image-preview"
+              url={objectUrls[previewSlot]!}
+              onClose={() => setPreviewSlot(null)}
+            />
+          )
+        )}
+      </AnimatePresence>
+
       <StepIndicator current={step} />
 
       <AnimatePresence mode="wait">
@@ -723,8 +955,9 @@ export function ProductSubmissionForm({
                   Media Upload
                 </h3>
                 <p className="font-sans text-xs text-stone-dark/45 mt-1">
-                  Upload up to 6 images and 1 video. Select the hero image shown
-                  in the catalog.
+                  {editListing
+                    ? "Optionally replace images/video. Leave empty to keep existing media."
+                    : "Upload up to 6 images and 1 video. Files upload immediately — you'll see a ✓ when each is ready."}
                 </p>
               </div>
 
@@ -734,11 +967,8 @@ export function ProductSubmissionForm({
                   const isVideo = i === 6;
                   return (
                     <React.Fragment key={i}>
-                      {/* Hidden file input */}
                       <input
-                        ref={(el) => {
-                          fileRefs.current[i] = el;
-                        }}
+                        ref={(el) => { fileRefs.current[i] = el; }}
                         type="file"
                         accept={isVideo ? "video/*" : "image/*"}
                         className="hidden"
@@ -753,12 +983,12 @@ export function ProductSubmissionForm({
                         isVideo={isVideo}
                         file={step3.files[i]}
                         objectUrl={objectUrls[i]}
+                        uploadState={uploadStates[i]}
                         isHero={!isVideo && step3.heroIdx === i}
                         onSelect={() => fileRefs.current[i]?.click()}
                         onClear={() => handleFileClear(i)}
-                        onSetHero={() =>
-                          setStep3((p) => ({ ...p, heroIdx: i }))
-                        }
+                        onSetHero={() => setStep3((p) => ({ ...p, heroIdx: i }))}
+                        onPreview={() => setPreviewSlot(i)}
                       />
                     </React.Fragment>
                   );
@@ -769,6 +999,36 @@ export function ProductSubmissionForm({
                 <p className={errorCls}>{errors.media}</p>
               )}
 
+              {/* Video upload success message */}
+              <AnimatePresence>
+                {uploadStates[6] === "done" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-200/60 rounded-xl"
+                  >
+                    <CheckCircle2 size={14} className="text-emerald-600 flex-shrink-0" />
+                    <p className="font-sans text-xs font-medium text-emerald-700">
+                      Video uploaded successfully.
+                    </p>
+                  </motion.div>
+                )}
+                {uploadStates[6] === "error" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="flex items-center gap-2.5 p-3 bg-red-50 border border-red-200/60 rounded-xl"
+                  >
+                    <AlertCircle size={14} className="text-red-600 flex-shrink-0" />
+                    <p className="font-sans text-xs font-medium text-red-700">
+                      Video upload failed: {uploadErrors[6] ?? "Unknown error"}. Please remove and try again.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* AI processing banner */}
               <AIBanner status={aiStatus} />
 
@@ -776,8 +1036,7 @@ export function ProductSubmissionForm({
               {step3.files.some(Boolean) && (
                 <p className="text-[10px] font-sans text-stone-dark/38 flex items-center gap-1.5">
                   <Star size={10} className="text-amber-gold" />
-                  Click &quot;Set hero&quot; under any uploaded image to set it
-                  as the catalog thumbnail.
+                  Click &quot;Set hero&quot; under any uploaded image to set it as the catalog thumbnail.
                 </p>
               )}
             </div>
@@ -804,12 +1063,17 @@ export function ProductSubmissionForm({
         </motion.button>
 
         <div className="flex items-center gap-2.5">
-          {/* Save as Draft (always available) */}
+          {/* Save as Draft */}
           <motion.button
             onClick={() => handleAction("draft")}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-sans font-semibold rounded-xl border border-stone-dark/12 text-stone-dark/60 hover:border-stone-dark/22 hover:text-stone-dark/80 transition-all"
+            disabled={anyUploading}
+            whileHover={!anyUploading ? { scale: 1.03 } : {}}
+            whileTap={!anyUploading ? { scale: 0.97 } : {}}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-sans font-semibold rounded-xl border transition-all ${
+              anyUploading
+                ? "border-stone-dark/8 text-stone-dark/25 cursor-not-allowed"
+                : "border-stone-dark/12 text-stone-dark/60 hover:border-stone-dark/22 hover:text-stone-dark/80"
+            }`}
           >
             <Save size={14} />
             Save Draft
@@ -829,12 +1093,26 @@ export function ProductSubmissionForm({
           ) : (
             <motion.button
               onClick={() => handleAction("review")}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-sans font-semibold rounded-xl bg-amber-gold text-stone-950 hover:bg-amber-gold/85 transition-colors shadow-[0_2px_12px_rgba(201,169,97,0.3)]"
+              disabled={anyUploading}
+              whileHover={!anyUploading ? { scale: 1.03 } : {}}
+              whileTap={!anyUploading ? { scale: 0.97 } : {}}
+              className={`flex items-center gap-1.5 px-5 py-2.5 text-sm font-sans font-semibold rounded-xl transition-colors ${
+                anyUploading
+                  ? "bg-amber-gold/40 text-stone-950/40 cursor-not-allowed"
+                  : "bg-amber-gold text-stone-950 hover:bg-amber-gold/85 shadow-[0_2px_12px_rgba(184,134,90,0.3)]"
+              }`}
             >
-              <Send size={14} />
-              Submit for Review
+              {anyUploading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Uploading…
+                </>
+              ) : (
+                <>
+                  <Send size={14} />
+                  Submit for Review
+                </>
+              )}
             </motion.button>
           )}
         </div>

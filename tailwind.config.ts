@@ -9,24 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Luxury obsidian & slate
-        "stone-dark": "#0a0a0a",
-        "stone-950": "#1a1a1a",
-        "slate-900": "#111827",
-        
-        // Luxury cream & off-white
-        "stone-light": "#f5f3f0",
-        "cream-50": "#faf9f7",
-        "cream-100": "#f3f1ee",
-        
-        // Warm metallic accents
-        "amber-gold": "#c9a961",
-        "champagne": "#e8dcc4",
-        "bronze-accent": "#8b7355",
-        
+        // Warm espresso text (replaces near-black)
+        "stone-dark": "#3a2f26",
+        "stone-950": "#2b231c",
+        "slate-900": "#2b231c",
+
+        // Warm cream & off-white (site base)
+        "stone-light": "#FBF7F1",
+        "cream-50": "#FDFBF8",
+        "cream-100": "#F6F0E6",
+
+        // Warm metallic / gold accents
+        "amber-gold": "#B8865A",
+        "champagne": "#E8DCC4",
+        "bronze-accent": "#8B6F47",
+
         // Functional palette
-        "accent-primary": "#c9a961",
-        "accent-secondary": "#8b7355",
+        "accent-primary": "#B8865A",
+        "accent-secondary": "#8B6F47",
       },
       fontFamily: {
         serif: ["var(--font-playfair)", "Georgia", "serif"],
@@ -64,8 +64,8 @@ const config: Config = {
         },
       },
       boxShadow: {
-        "luxury": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-        "luxury-lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+        "luxury": "0 2px 10px -2px rgba(58, 47, 38, 0.08), 0 1px 4px -1px rgba(58, 47, 38, 0.04)",
+        "luxury-lg": "0 12px 32px -8px rgba(58, 47, 38, 0.12), 0 4px 10px -4px rgba(58, 47, 38, 0.06)",
       },
     },
   },

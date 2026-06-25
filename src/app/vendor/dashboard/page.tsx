@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/auth-actions";
 import { getVendorProfile, getVendorProducts } from "@/lib/vendor-actions";
-import { MainLayout } from "@/components/common";
 import { VendorPortal } from "@/components/vendor/VendorPortal";
 import { BG_FOR_MATERIAL } from "@/components/vendor/data";
 import type { VendorListing } from "@/components/vendor/types";
@@ -26,7 +25,6 @@ export default async function VendorDashboardPage() {
     getVendorProducts(),
   ]);
 
-  // Map DB rows to VendorListing shape (adds UI-only bg/textLight fields)
   const initialListings: VendorListing[] = productRows.map((row) => {
     const mat = BG_FOR_MATERIAL[row.materialType] ?? BG_FOR_MATERIAL.other;
     return {
@@ -46,19 +44,17 @@ export default async function VendorDashboardPage() {
       status: (row.status as VendorListing["status"]) ?? "DRAFT",
       views: row.views ?? 0,
       createdAt: Math.floor(new Date(row.createdAt).getTime() / 1000),
+      adminFeedback: row.adminFeedback ?? undefined,
       bg: mat.bg,
       textLight: mat.textLight,
-      imageUrls: row.imageUrls ?? [],
-      videoUrl: row.videoUrl ?? null,
     };
   });
 
   return (
-    <MainLayout>
-      <VendorPortal
-        vendorProfile={vendorProfile}
-        initialListings={initialListings}
-      />
-    </MainLayout>
+    <VendorPortal
+      vendorProfile={vendorProfile}
+      initialListings={initialListings}
+      vendorUser={{ name: session.user.name, email: session.user.email }}
+    />
   );
 }

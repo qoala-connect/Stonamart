@@ -33,9 +33,9 @@ export function VendorPendingScreen() {
       className="min-h-screen flex flex-col items-center justify-center px-6 py-16"
       style={{
         background: [
-          "radial-gradient(ellipse at 20% 20%, rgba(201,169,97,0.06) 0%, transparent 55%)",
+          "radial-gradient(ellipse at 20% 20%, rgba(184,134,90,0.06) 0%, transparent 55%)",
           "radial-gradient(ellipse at 80% 80%, rgba(139,115,85,0.04) 0%, transparent 50%)",
-          "linear-gradient(160deg, #faf9f7 0%, #f3f1ee 100%)",
+          "linear-gradient(160deg, #FDFBF8 0%, #F6F0E6 100%)",
         ].join(", "),
       }}
     >
@@ -61,13 +61,13 @@ export function VendorPendingScreen() {
             className="relative px-8 pt-8 pb-6 overflow-hidden"
             style={{
               background: [
-                "linear-gradient(135deg, transparent 0%, rgba(201,169,97,0.06) 50%, transparent 100%)",
-                "linear-gradient(160deg, #0a0a0a 0%, #1a1a1a 100%)",
+                "linear-gradient(135deg, transparent 0%, rgba(184,134,90,0.06) 50%, transparent 100%)",
+                "linear-gradient(160deg, #3a2f26 0%, #3a2f26 100%)",
               ].join(", "),
             }}
           >
             <svg className="absolute inset-0 w-full h-full opacity-[0.03]" viewBox="0 0 500 160" preserveAspectRatio="xMidYMid slice">
-              <path d="M 0 80 Q 150 40 300 90 T 600 70" stroke="#c9a961" strokeWidth="2" fill="none" />
+              <path d="M 0 80 Q 150 40 300 90 T 600 70" stroke="#B8865A" strokeWidth="2" fill="none" />
             </svg>
 
             <div className="relative flex items-center gap-4">

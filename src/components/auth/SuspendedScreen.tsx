@@ -12,7 +12,7 @@ export function SuspendedScreen() {
       style={{
         background: [
           "radial-gradient(ellipse at 50% 0%, rgba(239,68,68,0.04) 0%, transparent 60%)",
-          "linear-gradient(160deg, #faf9f7 0%, #f3f1ee 100%)",
+          "linear-gradient(160deg, #FDFBF8 0%, #F6F0E6 100%)",
         ].join(", "),
       }}
     >
