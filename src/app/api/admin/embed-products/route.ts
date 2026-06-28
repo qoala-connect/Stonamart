@@ -13,7 +13,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { embedImageUrl, toVectorLiteral } from "@/lib/clip";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 interface EmbedResult {
   id: string;
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
 
   // ── Generate embeddings one by one ────────────────────────────────────────
   const results: EmbedResult[] = [];
+  const { embedImageUrl, toVectorLiteral } = await import("@/lib/clip");
 
   for (const row of rows) {
     const imageUrl = row.imageUrls[0];

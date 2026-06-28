@@ -1,4 +1,3 @@
-declare module "./globals.css";
 import type { Metadata } from "next";
 import "./globals.css";
 import { Playfair_Display, Inter } from "next/font/google";

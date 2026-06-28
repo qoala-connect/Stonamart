@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Camera, ArrowRight, Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -347,9 +348,9 @@ export function CatalogPage({ dbProducts = [] }: { dbProducts?: CatalogProduct[]
                 >
                   <Search size={12} className="text-amber-gold" />
                   <span>Results for <strong className="text-white">&ldquo;{textQuery}&rdquo;</strong></span>
-                  <a href="/products" className="text-white/40 hover:text-white transition-colors ml-1">
+                  <Link href="/products" className="text-white/40 hover:text-white transition-colors ml-1">
                     <X size={11} />
-                  </a>
+                  </Link>
                 </motion.div>
               )}
             </div>

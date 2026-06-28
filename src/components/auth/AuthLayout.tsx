@@ -16,6 +16,8 @@ interface AuthLayoutProps {
   panelFeatures?: string[];
   panelTheme?: "dark" | "light";
   panelAccent?: string; // e.g. gold for vendor, slate for admin
+  quote?: string;
+  quoteAttrib?: string;
 }
 
 const DEFAULT_PHOTO = "https://images.unsplash.com/photo-1722605090433-41d1183a792d?w=1200&q=85";
@@ -28,6 +30,8 @@ export function AuthLayout({
   panelFeatures,
   panelTheme = "dark",
   panelAccent = "#B8865A",
+  quote,
+  quoteAttrib,
 }: AuthLayoutProps) {
   return (
     <div className="fixed inset-0 flex font-sans bg-white overflow-hidden">
@@ -102,6 +106,19 @@ export function AuthLayout({
                   </li>
                 ))}
               </ul>
+            )}
+
+            {quote && (
+              <figure className="mt-8 max-w-[300px] border-l-2 pl-4" style={{ borderColor: `${panelAccent}66` }}>
+                <blockquote className="font-serif text-lg leading-snug text-white/80">
+                  &ldquo;{quote}&rdquo;
+                </blockquote>
+                {quoteAttrib && (
+                  <figcaption className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                    {quoteAttrib}
+                  </figcaption>
+                )}
+              </figure>
             )}
           </div>
 
