@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+<<<<<<< HEAD
 import { ArrowRight, MapPin, CheckCircle2, AlertCircle, Star } from "lucide-react";
+=======
+import { ArrowRight, MapPin, Star } from "lucide-react";
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
 import { SafeImage } from "@/components/ui/SafeImage";
 import { Container } from "@/components/ui";
 import Link from "next/link";
@@ -14,10 +18,14 @@ interface Product {
   state: string;
   category: string;
   finish: string;
+<<<<<<< HEAD
   price: string;
   priceNum: number;
   status: "in-stock" | "limited";
   description: string;
+=======
+  status: "in-stock" | "limited";
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
   img: string;
   rating: number;
 }
@@ -25,44 +33,68 @@ interface Product {
 const PRODUCTS: Product[] = [
   {
     id: "p1", name: "Makrana White", origin: "Rajasthan", state: "Mumbai",
+<<<<<<< HEAD
     category: "Marble", finish: "Polished", price: "₹150–₹400", priceNum: 150,
     status: "in-stock", rating: 4.9,
     description: "The marble that built the Taj Mahal — pristine white with subtle natural veining.",
+=======
+    category: "Marble", finish: "Polished", status: "in-stock", rating: 4.9,
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     img: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?w=700&q=82",
   },
   {
     id: "p2", name: "Jet Black Granite", origin: "Karnataka", state: "Bangalore",
+<<<<<<< HEAD
     category: "Granite", finish: "Polished", price: "₹80–₹200", priceNum: 80,
     status: "in-stock", rating: 4.8,
     description: "Uncompromising jet-black with fine crystalline texture. A South Indian staple.",
+=======
+    category: "Granite", finish: "Polished", status: "in-stock", rating: 4.8,
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     img: "https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?w=700&q=82",
   },
   {
     id: "p3", name: "Ambaji White", origin: "Gujarat", state: "Delhi",
+<<<<<<< HEAD
     category: "Marble", finish: "Polished", price: "₹120–₹280", priceNum: 120,
     status: "in-stock", rating: 4.7,
     description: "Soft grey veining on a luminous white base — loved for temples and luxury homes.",
+=======
+    category: "Marble", finish: "Polished", status: "in-stock", rating: 4.7,
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     img: "https://images.unsplash.com/photo-1726987242665-d0a7d2268ea0?w=700&q=82",
   },
   {
     id: "p4", name: "Indore Brown", origin: "Madhya Pradesh", state: "Pune",
+<<<<<<< HEAD
     category: "Marble", finish: "Honed", price: "₹180–₹420", priceNum: 180,
     status: "in-stock", rating: 4.8,
     description: "Rich warm-toned marble with cream veining — a statement piece for kitchens.",
+=======
+    category: "Marble", finish: "Honed", status: "in-stock", rating: 4.8,
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     img: "https://images.unsplash.com/photo-1722605090433-41d1183a792d?w=700&q=82",
   },
   {
     id: "p5", name: "Sunset Gold", origin: "Rajasthan", state: "Jaipur",
+<<<<<<< HEAD
     category: "Sandstone", finish: "Brushed", price: "₹55–₹130", priceNum: 55,
     status: "in-stock", rating: 4.6,
     description: "Warm Rajasthani sandstone — weather-resistant and timeless for facades.",
+=======
+    category: "Sandstone", finish: "Brushed", status: "in-stock", rating: 4.6,
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     img: "https://images.unsplash.com/photo-1554755229-ca4470e07232?w=700&q=82",
   },
   {
     id: "p6", name: "Tan Brown Granite", origin: "Andhra Pradesh", state: "Hyderabad",
+<<<<<<< HEAD
     category: "Granite", finish: "Polished", price: "₹400–₹750", priceNum: 400,
     status: "limited", rating: 4.9,
     description: "Deep brown with striking grey-violet crystals. One of India's most exported stones.",
+=======
+    category: "Granite", finish: "Polished", status: "limited", rating: 4.9,
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     img: "https://images.unsplash.com/photo-1733085097233-66441dedba94?w=700&q=82",
   },
 ];
@@ -84,7 +116,11 @@ function ProductCard({ p }: { p: Product }) {
       variants={item}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+<<<<<<< HEAD
       className="group bg-white border border-stone-100 rounded-2xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.10)] hover:border-stone-200 transition-all duration-300 flex flex-col"
+=======
+      className="group bg-white border border-stone-200/80 rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_14px_44px_rgba(0,0,0,0.12)] hover:border-stone-300 transition-all duration-300 flex flex-col"
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     >
       {/* Photo */}
       <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
@@ -96,6 +132,7 @@ function ProductCard({ p }: { p: Product }) {
           className="object-cover transition-transform duration-700"
           style={{ transform: hovered ? "scale(1.07)" : "scale(1)" }}
         />
+<<<<<<< HEAD
         {/* Badges */}
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
           <span className="text-[10.5px] font-sans font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-stone-700 shadow-sm">
@@ -110,6 +147,13 @@ function ProductCard({ p }: { p: Product }) {
               <CheckCircle2 size={9} /> In Stock
             </span>
           )}
+=======
+        {/* Category badge */}
+        <div className="absolute top-3 left-3">
+          <span className="text-[10.5px] font-sans font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-stone-700 shadow-sm">
+            {p.category}
+          </span>
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
         </div>
       </div>
 
@@ -127,7 +171,11 @@ function ProductCard({ p }: { p: Product }) {
         </div>
 
         {/* Origin */}
+<<<<<<< HEAD
         <div className="flex items-center gap-1.5 mb-2.5">
+=======
+        <div className="flex items-center gap-1.5 mb-3">
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
           <MapPin size={11} className="text-amber-gold shrink-0" />
           <span className="font-sans text-[11.5px] text-stone-400">
             {p.state} · {p.origin}, India
@@ -136,6 +184,7 @@ function ProductCard({ p }: { p: Product }) {
           <span className="font-sans text-[11.5px] text-stone-400">{p.finish}</span>
         </div>
 
+<<<<<<< HEAD
         {/* Description */}
         <p className="font-sans text-[12.5px] text-stone-500 leading-relaxed mb-3 flex-1">
           {p.description}
@@ -149,6 +198,10 @@ function ProductCard({ p }: { p: Product }) {
               {p.price} <span className="text-[11px] font-sans font-normal text-stone-400">/ sq ft</span>
             </p>
           </div>
+=======
+        {/* CTA */}
+        <div className="flex items-center justify-end pt-3 mt-auto border-t border-stone-100">
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
           <Link
             href={`/products/${p.id}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-950 text-white text-[11.5px] font-sans font-bold hover:bg-amber-gold active:scale-[0.97] transition-all duration-200"
@@ -169,7 +222,11 @@ export function FeaturedProductsSection() {
     : PRODUCTS.filter((p) => p.category === activeTab);
 
   return (
+<<<<<<< HEAD
     <section className="py-20 bg-white border-t border-stone-100">
+=======
+    <section className="py-20 bg-stone-50 border-t border-stone-100">
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
       <Container>
         {/* Header */}
         <motion.div
@@ -208,7 +265,11 @@ export function FeaturedProductsSection() {
                 "px-4 py-2 rounded-full font-sans text-[12.5px] font-semibold transition-all duration-200",
                 activeTab === cat
                   ? "bg-stone-950 text-white shadow-sm"
+<<<<<<< HEAD
                   : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+=======
+                  : "bg-white border border-stone-200 text-stone-600 hover:border-stone-300 hover:text-stone-900"
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
               )}
             >
               {cat}
@@ -233,4 +294,8 @@ export function FeaturedProductsSection() {
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)

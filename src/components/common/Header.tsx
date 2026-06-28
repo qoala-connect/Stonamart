@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Container } from "@/components/ui";
 import {
   MapPin, ChevronDown, Menu, X, Check,
   User, ShieldCheck, ArrowRight, Camera, Search, Package,
@@ -43,9 +42,15 @@ const NAV_LINKS = [
 ];
 
 const ROLE_OPTIONS = [
+<<<<<<< HEAD
   { id: "customer", label: "Customer", tagline: "Shop premium stones",   icon: User,        href: "/customer/auth",   desc: "Shop premium marbles, granites, tiles and more."         },
   { id: "vendor",   label: "Vendor",   tagline: "Grow your business",    icon: Package,     href: "/vendor/register", desc: "Manage products, orders and grow your business."         },
   { id: "admin",    label: "Admin",    tagline: "Manage operations",     icon: ShieldCheck, href: "/admin/auth",      desc: "Access and manage the platform and its operations."      },
+=======
+  { id: "customer", label: "Customer", tagline: "Shop premium stones", icon: User,        href: "/customer/auth",   desc: "Shop premium marbles, granites, tiles and more."   },
+  { id: "vendor",   label: "Vendor",   tagline: "Grow your business",  icon: Package,     href: "/vendor/register", desc: "Manage products, orders and grow your business."   },
+  { id: "admin",    label: "Admin",    tagline: "Manage operations",   icon: ShieldCheck, href: "/admin/auth",      desc: "Access and manage the platform and its operations." },
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
 ] as const;
 
 // ─── Role-specific menu items ─────────────────────────────────────────────────
@@ -53,7 +58,11 @@ type MenuItem = { label: string; href: string; icon: React.ElementType };
 
 function getMenuItems(role: string): MenuItem[] {
   if (role === "CUSTOMER") return [
+<<<<<<< HEAD
     { label: "My Profile",   href: "/account",               icon: User         },
+=======
+    { label: "My Profile",   href: "/account",               icon: User          },
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     { label: "My Inquiries", href: "/account?tab=inquiries", icon: MessageSquare },
   ];
   if (role === "VENDOR") return [
@@ -62,8 +71,13 @@ function getMenuItems(role: string): MenuItem[] {
   ];
   // ADMIN
   return [
+<<<<<<< HEAD
     { label: "Admin Dashboard",  href: "/admin/dashboard", icon: LayoutDashboard },
     { label: "Product Reviews",  href: "/admin/dashboard", icon: Package         },
+=======
+    { label: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { label: "Product Reviews", href: "/admin/dashboard", icon: Package         },
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
   ];
 }
 
@@ -73,6 +87,7 @@ function roleColor(role: string) {
   return "from-amber-500/20 to-amber-400/10 border-amber-200/60 text-amber-600";
 }
 
+<<<<<<< HEAD
 // ─── Search Bar with voice ────────────────────────────────────────────────────
 function SearchBar() {
   const router = useRouter();
@@ -80,6 +95,15 @@ function SearchBar() {
   const [listening, setListening]   = useState(false);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [open, setOpen]             = useState(false);
+=======
+// ─── Search Bar with voice + live suggestions ─────────────────────────────────
+function SearchBar() {
+  const router = useRouter();
+  const [query, setQuery]             = useState("");
+  const [listening, setListening]     = useState(false);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [open, setOpen]               = useState(false);
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
   const wrapRef  = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,9 +113,20 @@ function SearchBar() {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (!query.trim()) { setSuggestions([]); setOpen(false); return; }
     timerRef.current = setTimeout(async () => {
+<<<<<<< HEAD
       const res = await searchProducts(query);
       setSuggestions(res);
       setOpen(true);
+=======
+      try {
+        const res = await searchProducts(query);
+        setSuggestions(res);
+        setOpen(true);
+      } catch {
+        setSuggestions([]);
+        setOpen(false);
+      }
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
     }, 220);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [query]);
@@ -138,7 +173,11 @@ function SearchBar() {
   }
 
   return (
+<<<<<<< HEAD
     <div ref={wrapRef} className="relative w-full max-w-[520px]">
+=======
+    <div ref={wrapRef} className="relative w-full max-w-[420px]">
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
       <form onSubmit={handleSubmit}>
         <div className={cn(
           "flex items-center gap-2 pl-4 pr-2 py-2 rounded-full border transition-all duration-200",
@@ -441,6 +480,14 @@ export function Header() {
   const [scrolled,        setScrolled]        = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
 
+<<<<<<< HEAD
+=======
+  // Avoids hydration mismatch: session is only known on the client,
+  // so we render the skeleton for SSR + first client paint, then resolve.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
   // ── Auth state (persists across refreshes — reads from session cookie) ──
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const user = session?.user as { id: string; name: string; email: string; role: string } | undefined;
@@ -475,6 +522,7 @@ export function Header() {
 
   return (
     <>
+<<<<<<< HEAD
       {/* ── Announcement bar ── */}
       <div className="bg-stone-950 text-white hidden sm:block">
         <div className="max-w-[1400px] mx-auto px-6 md:px-10">
@@ -579,6 +627,104 @@ export function Header() {
                     onClick={() => setLoginOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-full bg-stone-950 text-white text-[13px] font-sans font-semibold hover:bg-stone-800 active:scale-[0.97] transition-all duration-150"
                   >
+=======
+     
+
+      {/* ── Main header ── */}
+      <header className={cn(
+        "sticky top-0 z-[100] w-full bg-white transition-all duration-300",
+        scrolled ? "shadow-[0_2px_24px_rgba(0,0,0,0.09)]" : "border-b border-stone-100"
+      )}>
+        <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+          <div className="flex items-center justify-between h-[68px] gap-4">
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 shrink-0 group">
+              <span className="font-serif text-[1.55rem] font-bold text-stone-950 leading-none tracking-tight">
+                Stona<span className="text-amber-gold">mart</span>
+              </span>
+              <span className="hidden xl:block text-[8px] font-sans font-bold uppercase tracking-[0.22em] text-stone-400 leading-[1.1] mt-0.5">
+                Marbles &<br/>Granites
+              </span>
+            </Link>
+
+            {/* Nav links — in-header */}
+            <nav className="hidden lg:flex items-center gap-5 shrink-0">
+              {NAV_LINKS.map((l) => {
+                const Icon = l.icon;
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="flex items-center gap-1.5 font-sans text-[13px] font-medium text-stone-600 hover:text-stone-950 transition-colors duration-150 whitespace-nowrap group"
+                  >
+                    <Icon size={14} className="text-stone-400 group-hover:text-amber-gold transition-colors" />
+                    {l.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Center — search bar */}
+            <div className="hidden lg:flex flex-1 justify-center px-2">
+              <SearchBar />
+            </div>
+
+            {/* Right controls */}
+            <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+
+              {/* City selector */}
+              <div className="relative" ref={cityRef}>
+                <button
+                  onClick={() => setCityOpen((v) => !v)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-stone-50 transition-colors duration-200 group"
+                >
+                  <MapPin size={14} className="text-stone-400 group-hover:text-amber-gold transition-colors" />
+                  <span className="font-sans text-[13px] font-medium text-stone-600">{activeCity?.name}</span>
+                  <ChevronDown size={12} className={cn("text-stone-400 transition-transform duration-250", cityOpen && "rotate-180")} />
+                </button>
+
+                {cityOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl z-50 overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.13)] border border-stone-100 py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="max-h-60 overflow-y-auto">
+                      {CITIES.map((city) => (
+                        <button
+                          key={city.id}
+                          onClick={() => handleSelectCity(city.id)}
+                          className={cn(
+                            "w-full px-4 py-2.5 text-left flex items-center justify-between group/item transition-colors",
+                            city.id === selectedCity ? "bg-amber-gold/8" : "hover:bg-stone-50"
+                          )}
+                        >
+                          <div>
+                            <p className={cn("text-[13px] font-sans font-medium", city.id === selectedCity ? "text-amber-gold" : "text-stone-700")}>
+                              {city.name}
+                            </p>
+                            <p className="text-[10.5px] font-sans text-stone-400">{city.region}</p>
+                          </div>
+                          {city.id === selectedCity && <Check size={13} className="text-amber-gold" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="w-px h-5 bg-stone-200 mx-0.5" />
+
+              {/* Auth section */}
+              <div className="ml-1">
+                {!mounted || sessionPending ? (
+                  /* Skeleton while session loads (and during SSR) */
+                  <div className="w-32 h-9 rounded-full bg-stone-100 animate-pulse" />
+                ) : isLoggedIn && user ? (
+                  <UserMenu user={user} />
+                ) : (
+                  <button
+                    onClick={() => setLoginOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-stone-950 text-white text-[13px] font-sans font-semibold hover:bg-stone-800 active:scale-[0.97] transition-all duration-150"
+                  >
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)
                     <User size={14} />
                     Sign In
                   </button>
@@ -689,4 +835,8 @@ export function Header() {
       <AIImageSearchModal isOpen={imageSearchOpen} onClose={() => setImageSearchOpen(false)} />
     </>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 3ce4358 (fixed header and footer , hero secton)

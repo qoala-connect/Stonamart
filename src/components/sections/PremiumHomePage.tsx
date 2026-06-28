@@ -4,7 +4,7 @@ import { HeroSlideshow } from "./HeroSlideshow";
 import { CategoryGrid } from "./CategoryGrid";
 import { FeaturedProductsSection } from "./FeaturedProductsSection";
 import { TestimonialsCarousel } from "./TestimonialsCarousel";
-import { RFQBanner } from "./RFQBanner";
+
 
 export function PremiumHomePage() {
   return (
@@ -13,7 +13,7 @@ export function PremiumHomePage() {
       <CategoryGrid />
       <FeaturedProductsSection />
       <TestimonialsCarousel />
-      <RFQBanner />
+     
     </>
   );
 }
