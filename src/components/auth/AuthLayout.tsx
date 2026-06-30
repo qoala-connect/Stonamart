@@ -48,15 +48,7 @@ export function AuthLayout({
           className="object-cover"
         />
         {/* Gradient overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              panelTheme === "dark"
-                ? "linear-gradient(160deg, rgba(8,6,4,0.94) 0%, rgba(14,11,8,0.82) 50%, rgba(6,5,3,0.96) 100%)"
-                : "linear-gradient(160deg, rgba(18,14,10,0.88) 0%, rgba(12,10,8,0.75) 50%, rgba(14,11,8,0.90) 100%)",
-          }}
-        />
+        
 
         {/* Panel content */}
         <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
@@ -70,30 +62,19 @@ export function AuthLayout({
           {/* Center content */}
           <div className="flex-1 flex flex-col justify-center py-10">
             {/* Pill badge */}
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border w-fit mb-6"
-              style={{ borderColor: `${panelAccent}45`, background: `${panelAccent}14` }}
-            >
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: panelAccent }} />
-              <span
-                className="font-sans text-[10px] font-bold uppercase tracking-[0.22em]"
-                style={{ color: panelAccent }}
-              >
-                Premium Marketplace
-              </span>
-            </div>
+            
 
-            <h2 className="font-serif text-3xl xl:text-[2.1rem] font-bold text-white leading-[1.2] mb-3">
+            <h2 className="font-serif text-3xl xl:text-[2.1rem] font-bold text-white">
               {headline}
             </h2>
-            <p className="font-sans text-[13.5px] text-white/50 leading-relaxed mb-8 max-w-[280px]">
+            <p className="font-sans text-[13.5px] text-white/80 leading-relaxed mb-8 max-w-[280px]">
               {subline}
             </p>
 
             {panelFeatures && panelFeatures.length > 0 && (
               <ul className="space-y-3">
                 {panelFeatures.map((f) => (
-                  <li key={f} className="flex items-center gap-3 text-[13px] font-sans text-white/72">
+                  <li key={f} className="flex items-center gap-3 text-[13px] font-sans text-white/90">
                     <span
                       className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                       style={{ background: `${panelAccent}25`, border: `1.5px solid ${panelAccent}55` }}
@@ -123,7 +104,7 @@ export function AuthLayout({
           </div>
 
           {/* Footer */}
-          <p className="font-sans text-[11px] text-white/25 shrink-0">
+          <p className="font-sans text-[11px] text-stone-500 shrink-0">
             © {new Date().getFullYear()} Stonamart · Premium Marbles &amp; Granites
           </p>
         </div>
@@ -168,7 +149,7 @@ export function AuthLayout({
                 <h2 className="font-serif text-2xl font-bold text-stone-900 leading-snug">
                   {headline}
                 </h2>
-                <p className="font-sans text-[13px] text-stone-400 mt-1 leading-relaxed">
+                <p className="font-sans text-[13px] text-stone-500 mt-1 leading-relaxed">
                   {subline}
                 </p>
               </div>
@@ -177,6 +158,17 @@ export function AuthLayout({
             </motion.div>
           </div>
         </div>
+
+        {/* Footer for the form panel (always visible at bottom) */}
+        <p className="text-center font-sans text-[12.5px] text-stone-500 py-4 border-t border-stone-100 shrink-0">
+          Already registered?{" "}
+          <a
+            href="/login"
+            className="text-amber-gold hover:text-amber-gold/70 font-semibold transition-colors"
+          >
+            Sign in
+          </a>
+        </p>
       </div>
     </div>
   );

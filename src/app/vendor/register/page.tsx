@@ -7,9 +7,9 @@ export default function VendorRegisterPage() {
     <AuthLayout
       headline="Vendor Portal"
       subline="Manage your products, orders and business all in one place."
-      panelPhoto="https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?w=1200&q=85"
+       panelPhoto="/images/vendor_login.png"
       panelFeatures={["Manage Products","Track Orders","Grow Your Business"]}
-      panelTheme="dark"
+      // panelTheme="dark"
       panelAccent="#B8865A"
     >
       <VendorRegisterForm />

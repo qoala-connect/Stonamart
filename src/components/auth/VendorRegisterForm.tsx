@@ -36,37 +36,37 @@ interface UploadedFile { file: File; preview?: string; uploading: boolean; url?:
 // ─── Step indicator ───────────────────────────────────────────────────────────
 function StepDots({ current }: { current: number }) {
   return (
-    <div className="flex items-center gap-0 mb-8">
+    <div className="flex items-center gap-0 mb-8 -mx-2">
       {STEPS.map((step, i) => {
         const Icon = step.icon;
         const done = step.n < current;
         const active = step.n === current;
         return (
           <React.Fragment key={step.n}>
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-col items-center gap-2 text-center px-2">
               <motion.div
                 animate={{
-                  backgroundColor: done ? "#B8865A" : active ? "#3a2f26" : "transparent",
-                  borderColor: done ? "#B8865A" : active ? "#3a2f26" : "#3a2f261a",
+                  backgroundColor: done ? "#B8865A" : active ? "#3a2f26" : "#f5f3f0",
+                  borderColor: done ? "#B8865A" : active ? "#3a2f26" : "#e7e5e4",
                 }}
                 transition={{ duration: 0.25 }}
-                className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
+                className="w-9 h-9 rounded-full border-2 flex items-center justify-center"
               >
                 {done ? (
-                  <CheckCircle2 size={13} className="text-white" />
+                  <CheckCircle2 size={14} className="text-white" />
                 ) : (
-                  <Icon size={13} className={active ? "text-white" : "text-stone-dark/25"} />
+                  <Icon size={14} className={active ? "text-white" : "text-stone-400"} />
                 )}
               </motion.div>
-              <span className={`text-[10px] font-sans font-semibold whitespace-nowrap ${active ? "text-stone-950" : done ? "text-amber-gold" : "text-stone-dark/30"}`}>
+              <span className={`text-[11px] font-sans font-semibold whitespace-nowrap ${active ? "text-stone-950" : done ? "text-amber-gold" : "text-stone-400"}`}>
                 {step.label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
               <motion.div
-                animate={{ backgroundColor: done ? "#B8865A" : "#3a2f2612" }}
+                animate={{ background: done ? "linear-gradient(to right, #B8865A, #e7e5e4)" : "#e7e5e4" }}
                 transition={{ duration: 0.3 }}
-                className="h-px flex-1 mx-2 mb-4 min-w-[12px]"
+                className="h-0.5 flex-1 -mx-2 mb-7 min-w-[16px] bg-stone-200"
               />
             )}
           </React.Fragment>
@@ -108,17 +108,17 @@ function FileDropZone({
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 ${
+        className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
           dragging
-            ? "border-amber-gold/60 bg-amber-gold/6"
-            : "border-stone-dark/12 hover:border-stone-dark/25 hover:bg-stone-dark/2"
+            ? "border-amber-gold/80 bg-amber-gold/10"
+            : "border-stone-200 hover:border-amber-gold/50 hover:bg-amber-gold/5"
         }`}
       >
-        <Upload size={22} className="mx-auto text-stone-dark/25 mb-2" />
-        <p className="font-sans text-[13px] font-semibold text-stone-dark/50">
-          Drop files or <span className="text-amber-gold underline underline-offset-2">browse</span>
+        <Upload size={24} className="mx-auto text-stone-300 mb-3" />
+        <p className="font-sans text-sm font-semibold text-stone-600">
+          Drop files here or <span className="text-amber-gold">browse</span>
         </p>
-        <p className="font-sans text-[11px] text-stone-dark/30 mt-1">
+        <p className="font-sans text-xs text-stone-400 mt-1.5">
           PDF, JPG, PNG · Max {MAX_FILE_SIZE_MB} MB per file
         </p>
         <p className="font-sans text-[10.5px] text-stone-dark/25 mt-0.5">
@@ -141,24 +141,24 @@ function FileDropZone({
       </div>
 
       {files.length > 0 && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {files.map((f, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 px-3.5 py-2.5 bg-white border border-stone-dark/8 rounded-xl"
+              className="flex items-center gap-3 px-3.5 py-2.5 bg-white border border-stone-200 rounded-xl shadow-sm"
             >
-              <FileText size={14} className="text-stone-dark/35 flex-shrink-0" />
+              <FileText size={16} className="text-stone-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[12.5px] font-sans font-semibold text-stone-950 truncate">
+                <p className="text-xs font-sans font-medium text-stone-800 truncate">
                   {f.file.name}
                 </p>
-                <p className="text-[10.5px] font-sans text-stone-dark/35">
+                <p className="text-[10px] font-sans text-stone-400">
                   {(f.file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
               <div className="flex-shrink-0">
                 {f.uploading ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-amber-gold border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-amber-gold/30 border-t-amber-gold animate-spin" />
                 ) : f.url ? (
                   <CheckCircle2 size={15} className="text-emerald-500" />
                 ) : f.error ? (
@@ -312,17 +312,11 @@ export function VendorRegisterForm() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <p className="text-[10px] font-sans font-bold text-amber-gold/70 uppercase tracking-[0.22em] mb-2">
-          Vendor Partner Program
-        </p>
-        <h2 className="font-serif text-[1.85rem] font-bold text-stone-950 leading-tight tracking-tight">
-          Register as a Vendor
+      <div className="text-center">
+        <h2 className="font-serif text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-stone-900 to-stone-700">
+          Become a Stonamart Vendor
         </h2>
-        <p className="mt-2 font-sans text-[13.5px] text-stone-dark/45 leading-relaxed">
-          List your stone inventory on India&apos;s premium marketplace
-        </p>
-        <div className="mt-5 h-px bg-gradient-to-r from-amber-gold/30 via-stone-dark/8 to-transparent" />
+        <div className="mt-3 h-px max-w-[120px] mx-auto bg-gradient-to-r from-transparent via-amber-gold/50 to-transparent" />
       </div>
 
       <StepDots current={step} />
@@ -496,7 +490,7 @@ export function VendorRegisterForm() {
                   placeholder="Plot 12, Industrial Area Phase 2, ..."
                   value={s3.businessAddress}
                   onChange={(e) => setS3((p) => ({ ...p, businessAddress: e.target.value }))}
-                  className={`w-full px-4 py-3 bg-white border rounded-xl text-[14px] font-sans text-stone-950 placeholder:text-stone-dark/25 focus:outline-none resize-none transition-all duration-200 ${
+                  className={`w-full px-3.5 py-2.5 bg-white border text-[13px] font-sans text-stone-900 placeholder-stone-300 focus:outline-none resize-none transition-all duration-200 rounded-lg ${
                     fieldErrors.businessAddress
                       ? "border-red-400 focus:border-red-500"
                       : "border-stone-dark/12 focus:border-amber-gold/60 focus:ring-2 focus:ring-amber-gold/12"
@@ -548,7 +542,7 @@ export function VendorRegisterForm() {
                 onRemove={removeFile}
               />
 
-              <p className="text-[11.5px] font-sans text-stone-dark/35 text-center">
+              <p className="text-xs font-sans text-stone-400 text-center pt-2">
                 Document upload is optional — you can submit without it
               </p>
             </motion.div>
@@ -556,13 +550,13 @@ export function VendorRegisterForm() {
         </AnimatePresence>
 
         {/* ── Navigation ── */}
-        <div className="flex items-center justify-between mt-7 pt-5 border-t border-stone-dark/6">
+        <div className="flex items-center justify-between mt-8 pt-6 border-t border-stone-100">
           {step > 1 ? (
             <motion.button
               type="button"
               onClick={back}
               whileHover={{ x: -2 }}
-              className="flex items-center gap-2 px-4 py-2.5 text-[13px] font-sans font-semibold text-stone-dark/60 hover:text-stone-950 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 text-[13px] font-sans font-semibold text-stone-500 hover:text-stone-800 transition-colors"
             >
               <ChevronLeft size={15} />
               Back
@@ -577,7 +571,7 @@ export function VendorRegisterForm() {
               onClick={next}
               whileHover={{ x: 2 }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-6 py-3 bg-stone-950 text-white font-sans font-semibold text-[13px] rounded-xl hover:bg-stone-dark transition-colors shadow-sm"
+              className="flex items-center gap-2 px-6 py-3 bg-stone-950 text-white font-sans font-semibold text-[13px] rounded-xl hover:bg-stone-800 transition-colors shadow-sm"
             >
               Continue
               <ChevronRight size={14} />
@@ -593,7 +587,7 @@ export function VendorRegisterForm() {
       </form>
 
       {/* Already have an account */}
-      <p className="text-center font-sans text-[12.5px] text-stone-dark/45">
+      <p className="text-center font-sans text-[12.5px] text-stone-500 pt-2">
         Already registered?{" "}
         <a
           href="/login"
