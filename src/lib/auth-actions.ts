@@ -60,48 +60,109 @@ export async function loginAction(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  console.log("[loginAction] Starting login process.");
+
   const email = (formData.get("email") as string)?.trim();
   const password = formData.get("password") as string;
 
   if (!email || !password) {
+    console.log("[loginAction] Email or password missing.");
     return { error: "Email and password are required." };
+  }
+
+  // --- Step 1: Check required environment variables ---
+  console.log("[loginAction] Step 1: Checking environment variables.");
+  const requiredEnvVars = [
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_APP_URL", // Crucial for Better Auth's trustedOrigins
+  ];
+  const missingEnvVars = requiredEnvVars.filter((v) => !process.env[v]);
+  if (missingEnvVars.length > 0) {
+    const errorMessage = `Missing required environment variables: ${missingEnvVars.join(", ")}.`;
+    console.error(`[loginAction] ${errorMessage}`);
+    return { error: process.env.NODE_ENV !== 'production' ? errorMessage : "Configuration error. Please try again later." };
+  }
+  console.log("[loginAction] All required environment variables are present.");
+
+  // --- Step 2: Validate PostgreSQL connectivity ---
+  console.log("[loginAction] Step 2: Validating PostgreSQL connectivity.");
+  try {
+    await db.query('SELECT 1');
+    console.log("[loginAction] PostgreSQL connection successful.");
+  } catch (dbErr) {
+    console.error("[loginAction] PostgreSQL connection failed:", dbErr);
+    const errorMessage = "Failed to connect to the database.";
+    return { error: process.env.NODE_ENV !== 'production' ? `${errorMessage} Details: ${String(dbErr)}` : "Database connection error. Please try again later." };
   }
 
   // Sign out any existing session first — avoids cookie conflicts when
   // switching accounts (e.g. admin logging in as vendor).
+  console.log("[loginAction] Attempting to sign out any existing session.");
   try {
     await auth.api.signOut({ headers: await headers() });
+    console.log("[loginAction] Existing session signed out successfully (if any).");
   } catch {
-    // Not currently signed in — that's fine, continue.
+    console.warn("[loginAction] Failed to sign out existing session (non-fatal).");
   }
 
+  // --- Step 3: Attempt to sign in via Better Auth ---
+  console.log("[loginAction] Step 3: Attempting to sign in with Better Auth.");
   try {
+    const requestHeaders = await headers();
+    console.log("[loginAction] Request headers for signInEmail:", Object.fromEntries(requestHeaders.entries()));
+
     await auth.api.signInEmail({
       body: { email, password },
-      headers: await headers(),
+      headers: requestHeaders,
     });
+    console.log("[loginAction] Better Auth signInEmail successful.");
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[loginAction] signInEmail failed:", msg);
-    return { error: "Invalid email or password. Please try again." };
+    // Return actual error message in development, generic in production
+    return { error: process.env.NODE_ENV !== 'production' ? `Login failed: ${msg}` : "Invalid email or password. Please try again." };
   }
 
+  // --- Step 4: Query DB for user role/status and redirect ---
+  console.log("[loginAction] Step 4: Querying DB for user role and status.");
   // Query DB directly for role/status — signInEmail return value may omit
   // custom fields when using the nextCookies() plugin.
-  const { rows } = await db.query(
-    `SELECT role, status FROM "user" WHERE email = $1 LIMIT 1`,
-    [email]
-  );
-  const userRole   = (rows[0]?.role   as string) ?? "CUSTOMER";
-  const userStatus = (rows[0]?.status as string) ?? "ACTIVE";
+  try {
+    const { rows } = await db.query(
+      `SELECT role, status FROM "user" WHERE email = $1 LIMIT 1`,
+      [email]
+    );
+    const userRole   = (rows[0]?.role   as string) ?? "CUSTOMER";
+    const userStatus = (rows[0]?.status as string) ?? "ACTIVE";
+    console.log(`[loginAction] User found: Role=${userRole}, Status=${userStatus}`);
 
-  if (userStatus === "INACTIVE") redirect("/suspended");
-  if (userRole === "ADMIN")  redirect("/admin/dashboard");
-  if (userRole === "VENDOR") {
-    if (userStatus === "PENDING") redirect("/vendor/pending");
-    redirect("/vendor/dashboard");
+    if (userStatus === "INACTIVE") {
+      console.log("[loginAction] Redirecting to /suspended (INACTIVE user).");
+      redirect("/suspended");
+    }
+    if (userRole === "ADMIN") {
+      console.log("[loginAction] Redirecting to /admin/dashboard (ADMIN user).");
+      redirect("/admin/dashboard");
+    }
+    if (userRole === "VENDOR") {
+      if (userStatus === "PENDING") {
+        console.log("[loginAction] Redirecting to /vendor/pending (PENDING VENDOR user).");
+        redirect("/vendor/pending");
+      }
+      console.log("[loginAction] Redirecting to /vendor/dashboard (ACTIVE VENDOR user).");
+      redirect("/vendor/dashboard");
+    }
+    console.log("[loginAction] Redirecting to /account (CUSTOMER user).");
+    redirect("/account");
+  } catch (dbQueryErr) {
+    console.error("[loginAction] Failed to query user role/status from DB:", dbQueryErr);
+    const errorMessage = "Failed to retrieve user details after login.";
+    return { error: process.env.NODE_ENV !== 'production' ? `${errorMessage} Details: ${String(dbQueryErr)}` : "An unexpected error occurred. Please try again." };
   }
-  redirect("/account");
 }
 
 // ─── CUSTOMER SIGNUP ──────────────────────────────────────────────────────────
