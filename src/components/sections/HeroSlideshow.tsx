@@ -105,8 +105,8 @@ export function HeroSlideshow() {
   return (
     <>
     <section
-  className="relative w-full h-[380px] md:h-[450px] lg:h-[520px] overflow-hidden flex items-center bg-stone-100"
->
+      className="relative w-full min-h-[380px] md:min-h-[450px] lg:min-h-[520px] overflow-hidden flex items-center bg-stone-100 py-14 sm:py-16"
+    >
         
         {/* ── BACKGROUND IMAGE ── */}
        {/* ── BACKGROUND IMAGE ── */}
@@ -124,9 +124,8 @@ export function HeroSlideshow() {
 </div>
 
         {/* ── FOREGROUND CONTENT ── */}
-        <div className="relative z-10 w-full px-8 sm:px-12 lg:px-16 xl:px-20 py-16">
-          <div className="max-w-[550px]">
-            
+        <div className="relative z-10 w-full px-6 sm:px-10 lg:px-16 xl:px-20 py-14 md:py-16">
+          <div className="max-w-full sm:max-w-[550px]">
             {/* Eyebrow */}
             <motion.p
               initial={{ opacity: 0, y: 8 }}
@@ -177,7 +176,7 @@ export function HeroSlideshow() {
             </div>
 
             {/* Search Container with Glassmorphism */}
-            <div className="bg-white/40 backdrop-blur-md p-5 -ml-5 rounded-3xl inline-block w-full max-w-[540px] border border-white/50 shadow-xl">
+            <div className="bg-white/40 backdrop-blur-md p-5 rounded-3xl w-full max-w-[540px] border border-white/50 shadow-xl sm:-ml-5">
               <HeroSearch onOpenAI={() => setAiOpen(true)} />
             </div>
 

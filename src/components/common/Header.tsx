@@ -626,7 +626,7 @@ export function Header() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="lg:hidden border-t border-stone-100 bg-white shadow-lg">
+          <div className="lg:hidden border-t border-stone-100 bg-white shadow-lg max-h-[calc(100vh-88px)] overflow-y-auto">
             <div className="max-w-[1400px] mx-auto px-5 py-4 space-y-0.5">
               {/* Mobile search bar */}
               <div className="pb-3">

@@ -157,7 +157,7 @@ export function FeaturedProductsSection() {
           </div>
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 text-[13px] font-sans font-semibold text-stone-950 border border-stone-200 px-5 py-2.5 rounded-full hover:bg-stone-950 hover:text-white hover:border-stone-950 transition-all duration-200 whitespace-nowrap"
+            className="inline-flex flex-wrap items-center justify-center gap-1.5 text-[13px] font-sans font-semibold text-stone-950 border border-stone-200 px-5 py-2.5 rounded-full hover:bg-stone-950 hover:text-white hover:border-stone-950 transition-all duration-200"
           >
             View all products <ArrowRight size={13} />
           </Link>
@@ -187,7 +187,7 @@ export function FeaturedProductsSection() {
           variants={stagger}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           {filtered.map((p) => <ProductCard key={p.id} p={p} />)}
         </motion.div>

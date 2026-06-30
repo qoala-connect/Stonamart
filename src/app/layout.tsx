@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   title: "Stonamart - Premium Stone Procurement",
   description:
     "Luxury stone procurement platform for marble, granite, and quartz materials",
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({

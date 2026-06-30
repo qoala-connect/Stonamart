@@ -14,12 +14,54 @@
       "DejaVu Sans Mono", monospace;
   }
 
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 0;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-width: 0;
+  }
+
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+    display: block;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    min-width: 0;
+  }
+
   * {
     @apply border-stone-dark/10;
   }
 
   body {
     @apply bg-stone-light text-stone-dark;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+    display: block;
+    height: auto;
   }
 
   h1,

@@ -88,7 +88,7 @@ export function CategoryGrid() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8"
         >
           {CATS.map((cat) => (
             <motion.div key={cat.id} variants={fade}>
@@ -134,7 +134,7 @@ export function CategoryGrid() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-5 bg-white border border-stone-100 rounded-xl px-7 py-6"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 bg-white border border-stone-100 rounded-xl px-5 sm:px-7 py-6"
         >
           {TRUST.map(({ icon: Icon, title, sub }) => (
             <div key={title} className="flex items-center gap-3">
