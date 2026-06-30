@@ -19,7 +19,7 @@ export async function sendProductRequestEmail(
     return;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://stonamart.com";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stonamart.com"; // Use NEXT_PUBLIC_APP_URL for consistency
   const respondUrl = `${baseUrl}/vendor/requests?requestId=${request.id}`;
 
   const budgetText =
