@@ -4,8 +4,8 @@
   "private": true,
   "description": "Modern B2B and eCommerce platform for premium stone, marble, granite, quartz, and construction materials.",
  "scripts": {
-  "dev": "next dev --webpack",
-  "build": "next build --webpack",
+  "dev": "next dev ",
+  "build": "next build ",
   "start": "next start",
   "lint": "next lint",
   "type-check": "tsc --noEmit"
