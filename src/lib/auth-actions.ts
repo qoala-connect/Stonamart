@@ -73,7 +73,6 @@ export async function loginAction(
   // --- Step 1: Check required environment variables ---
   console.log("[loginAction] Step 1: Checking environment variables.");
   const requiredEnvVars = [
-    "DATABASE_URL",
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
     "NEXT_PUBLIC_SUPABASE_URL",
@@ -85,9 +84,8 @@ export async function loginAction(
   if (missingEnvVars.length > 0) {
     const errorMessage = `Missing required environment variables: ${missingEnvVars.join(", ")}.`;
     console.error(`[loginAction] ${errorMessage}`);
-    return { error: process.env.NODE_ENV !== 'production' ? errorMessage : "Configuration error. Please try again later." };
   }
-  console.log("[loginAction] All required environment variables are present.");
+  console.log("[loginAction] Environment check complete.");
 
   // --- Step 2: Validate PostgreSQL connectivity ---
   console.log("[loginAction] Step 2: Validating PostgreSQL connectivity.");
@@ -96,8 +94,8 @@ export async function loginAction(
     console.log("[loginAction] PostgreSQL connection successful.");
   } catch (dbErr) {
     console.error("[loginAction] PostgreSQL connection failed:", dbErr);
-    const errorMessage = "Failed to connect to the database.";
-    return { error: process.env.NODE_ENV !== 'production' ? `${errorMessage} Details: ${String(dbErr)}` : "Database connection error. Please try again later." };
+    const errorMessage = `Failed to connect to the database. Details: ${String(dbErr)}`;
+    return { error: process.env.NODE_ENV !== "production" ? errorMessage : "Database connection error. Please try again later." };
   }
 
   // Sign out any existing session first — avoids cookie conflicts when
