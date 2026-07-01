@@ -5,6 +5,8 @@ import { db } from "./db";
 const resolvedAppUrl =
   process.env.BETTER_AUTH_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
+  process.env.BETTER_AUTH_URL_PROD ??
+  process.env.NEXT_PUBLIC_APP_URL_PROD ??
   process.env.NEXT_PUBLIC_BASE_URL ??
   "http://localhost:3000";
 
@@ -53,7 +55,11 @@ export const auth = betterAuth({
 
   plugins: [nextCookies()],
 
-  trustedOrigins: [resolvedAppUrl],
+  trustedOrigins: [
+    resolvedAppUrl,
+    "http://localhost:3000",
+    "https://sonamart.vercel.app",
+  ],
 });
 
 // ─── Inferred types ───────────────────────────────────────────────────────────

@@ -87,15 +87,13 @@ export async function loginAction(
   }
   console.log("[loginAction] Environment check complete.");
 
-  // --- Step 2: Validate PostgreSQL connectivity ---
-  console.log("[loginAction] Step 2: Validating PostgreSQL connectivity.");
+  // --- Step 2: Validate PostgreSQL connectivity (best-effort only) ---
+  console.log("[loginAction] Step 2: Checking PostgreSQL connectivity.");
   try {
     await db.query('SELECT 1');
     console.log("[loginAction] PostgreSQL connection successful.");
   } catch (dbErr) {
-    console.error("[loginAction] PostgreSQL connection failed:", dbErr);
-    const errorMessage = `Failed to connect to the database. Details: ${String(dbErr)}`;
-    return { error: process.env.NODE_ENV !== "production" ? errorMessage : "Database connection error. Please try again later." };
+    console.warn("[loginAction] PostgreSQL connection check failed (continuing without hard stop):", dbErr);
   }
 
   // Sign out any existing session first — avoids cookie conflicts when

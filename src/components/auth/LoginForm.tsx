@@ -74,7 +74,7 @@ export function LoginForm() {
             <input type="checkbox" className="w-3.5 h-3.5 accent-stone-950 rounded" />
             <span className="font-sans text-[12px] text-stone-500">Remember me</span>
           </label>
-          <Link href="/forgot-password" className="font-sans text-[12px] text-amber-gold hover:underline font-medium">
+          <Link href="/forgot-password" prefetch={false} className="font-sans text-[12px] text-amber-gold hover:underline font-medium">
             Forgot Password?
           </Link>
         </div>
