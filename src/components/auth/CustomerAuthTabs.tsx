@@ -157,7 +157,7 @@ function LoginFormInline() {
         </FormField>
 
         <div className="flex justify-end">
-          <Link href="/forgot-password" className="text-[12px] font-sans text-amber-gold hover:text-amber-gold/70 transition-colors font-medium">
+          <Link href="/forgot-password" prefetch={false} className="text-[12px] font-sans text-amber-gold hover:text-amber-gold/70 transition-colors font-medium">
             Forgot password?
           </Link>
         </div>

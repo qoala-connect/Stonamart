@@ -65,7 +65,7 @@ function AdminLoginForm() {
         </FormField>
 
         <div className="flex justify-end">
-          <Link href="/forgot-password"
+          <Link href="/forgot-password" prefetch={false}
             className="text-xs font-sans text-[#B8865A]/70 hover:text-[#B8865A] transition-colors font-semibold tracking-wide uppercase">
             Recover Access
           </Link>

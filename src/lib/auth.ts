@@ -3,10 +3,14 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 
 const resolvedAppUrl =
+  process.env.NEXT_PUBLIC_APP_URL ?? // Primary public URL, e.g., https://www.yourdomain.com
   process.env.BETTER_AUTH_URL ??
-  process.env.NEXT_PUBLIC_APP_URL ??
+  process.env.NEXT_PUBLIC_VERCEL_URL ?? // Vercel specific public URL, e.g., https://your-app.vercel.app
+  process.env.BETTER_AUTH_URL_PROD ??
+  process.env.NEXT_PUBLIC_APP_URL_PROD ??
   process.env.NEXT_PUBLIC_BASE_URL ??
-  "http://localhost:3000";
+  process.env.NEXT_PUBLIC_BASE_URL_PROD ??
+  "http://127.0.0.1:3000";
 
 if (!process.env.BETTER_AUTH_URL) {
   process.env.BETTER_AUTH_URL = resolvedAppUrl;
@@ -53,7 +57,7 @@ export const auth = betterAuth({
 
   plugins: [nextCookies()],
 
-  trustedOrigins: [resolvedAppUrl],
+  trustedOrigins: [resolvedAppUrl, "http://localhost:3000"] , // IMPORTANT: Replace with your actual deployed domains.
 });
 
 // ─── Inferred types ───────────────────────────────────────────────────────────
