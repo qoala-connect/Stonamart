@@ -2,6 +2,16 @@ import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 
+const resolvedAppUrl =
+  process.env.BETTER_AUTH_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  process.env.NEXT_PUBLIC_BASE_URL ??
+  "http://localhost:3000";
+
+if (!process.env.BETTER_AUTH_URL) {
+  process.env.BETTER_AUTH_URL = resolvedAppUrl;
+}
+
 // ─── Better Auth server configuration ────────────────────────────────────────
 // Connects to Supabase PostgreSQL via DATABASE_URL (service role connection).
 // The nextCookies() plugin enables automatic cookie management in
@@ -43,9 +53,7 @@ export const auth = betterAuth({
 
   plugins: [nextCookies()],
 
-  trustedOrigins: [
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-  ],
+  trustedOrigins: [resolvedAppUrl],
 });
 
 // ─── Inferred types ───────────────────────────────────────────────────────────
