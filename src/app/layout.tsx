@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   title: "Stonamart - Premium Stone Procurement",
   description:
     "Luxury stone procurement platform for marble, granite, and quartz materials",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   viewport: "width=device-width, initial-scale=1",
 };
 
